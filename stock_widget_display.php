@@ -277,6 +277,7 @@ function stock_widget_create_row($top_position, $background_color, $stock_data, 
 
 	if($display_options['change_percent']==1){
 		$data_item=$stock_data['change_percent'];
+		$data_item=str_replace('%','',$data_item);
 		if($data_item>0){
 			$change_color="green";
 			$change_border="#006800";
