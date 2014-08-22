@@ -1,0 +1,32 @@
+.stock_table{
+	position:relative;
+	margin:0px;
+	padding:0px;
+
+}
+
+.stock_table_row{
+	position: absolute;
+}
+
+.stock_table_element{
+	text-align:center;
+	position:absolute;
+	display:inline-block;
+	height: 100%;
+}
+
+.widget_verti_dash{
+	position:absolute;
+	background-color:#D7D7D7;
+	opacity:0.25;
+	width:1px;
+}
+
+.widget_horizontal_dash{
+	position:absolute;
+	background-color:#D7D7D7;
+	opacity:0.6;
+	left:10px;
+	height:1px;
+}
