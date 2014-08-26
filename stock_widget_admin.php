@@ -118,7 +118,7 @@ add_option('stock_widget_default_settings',array(
 	));
 
 
-add_action('init', 'stock_widget_admin_init');
+add_action('admin_init', 'stock_widget_admin_init');
 function stock_widget_admin_init() {
 	wp_register_style('stock_widget_admin_style',plugins_url('stock_widget_admin_style.css', __FILE__));
 	wp_enqueue_style('stock_widget_admin_style');
