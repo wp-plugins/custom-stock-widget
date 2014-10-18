@@ -1,10 +1,10 @@
 === Custom Stock Widget ===
-Contributors: Relevad, WorkOnHoliday
+Contributors: Relevad
 Donate link: http://svaca.com/
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 3.9.2
-Stable tag: trunk
+Stable tag: 1.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,7 @@ Features:
  * Preview of custom stock widget after saving on settings page
  * Acceptance of custom stock widgets using shortcode specifications
 
-This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov (WorkOnHoliday), Matthew Hively, and Boris Kletser.
+This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Matthew Hively, and Boris Kletser.
 
 == Installation ==
 
