@@ -29,7 +29,7 @@ function stock_widget($atts){
 	$category_name=$category[0]->name;
 	$category_name=str_replace(' ','',$category_name);
 	$stock_list=(!empty($stock_categories[$category_name]) ? $stock_categories[$category_name] : $stock_categories['Default']);
-	$data_list=stock_widget_get_data($stock_list);
+	$data_list=stock_plugin_get_data($stock_list);
 	$data_list=$data_list['valid_stocks'];
 	$output=stock_widget_create_table($data_list, $display, $width, $height, $text_color, $background_color1,$background_color2);
 	return $output;

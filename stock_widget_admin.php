@@ -27,7 +27,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 */
 
-include WP_CONTENT_DIR.'/plugins/custom-stock-widget/stock_widget_cache.php';
+include WP_CONTENT_DIR.'/plugins/custom-stock-widget/stock_plugin_cache.php';
 include WP_CONTENT_DIR."/plugins/custom-stock-widget/stock_widget_display.php";
 
 add_shortcode('stock-widget', 'stock_widget');
@@ -405,7 +405,7 @@ function stock_widget_update_category_stock_list(){
 		}
 		$input_list=array_unique($input_list);
 		//runs the caching function on the given stocks list to see if any of the stocks were invalid.
-		$cache_output=stock_widget_get_data($input_list);
+		$cache_output=stock_plugin_get_data($input_list);
 		$bad_stock_list=$cache_output['invalid_stocks'];
 		if(!empty($bad_stock_list)){
 			//get the difference of the two arrays, filter the empty values, and condense the array

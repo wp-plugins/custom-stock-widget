@@ -7,8 +7,36 @@
 //array(
 //  'invalid_stocks'=> array('YHAAO', 'AAQ#'), 
 //  'valid_data' => array('YHOO'=>array('stock_sym'=>'YHOO'), 'GOOG'=>array()))
-function stock_ticker_get_data($stock_list){
-    
+
+if (!function_exists('stock_plugin_get_data')) { //since this file is shared between widget and ticker plugins, we need to only declare this ONCE
+ function stock_plugin_get_data($stock_list){
+   
+  //The cache returns a string of the data elements separated by commas. This funciton
+  //Splits the string by the commas, removes any single quote marks('), and returns
+  //an array of the elements with the appropriate keys. 
+  function stock_plugin_proccess_data($data_string){
+    $key_list = array(
+        'stock_sym','stock_name','last_val','change_val','change_percent',
+        'market_cap','fifty_week_range','pe_ratio','earning_per_share','revenue'
+        );
+    $data      = str_getcsv($data_string, ",", "'");
+    $data_list = array_combine($key_list, $data);
+    return $data_list;
+  }
+
+  function stock_plugin_url_get_json($Url) {
+    if (!function_exists('curl_init')){
+        die('CURL is not installed!');
+    }
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $Url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TRANSFERTEXT, false);
+    $output = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($output, true); //2nd parameter is to return this as an assoc array instead of a stdObject
+  }
+ 
     $valid_stock_data   = array();
     $invalid_stock_data = array();
     if (!empty($stock_list)) {
@@ -24,7 +52,7 @@ function stock_ticker_get_data($stock_list){
             }
             $stock_list_string = str_replace(' ', '', $stock_list_string);
             $url = "http://websking.com/ticker?cmd=get&ticker={$stock_list_string}&type=stock&api=v2";
-            $response_list = stock_ticker_url_get_json($url);
+            $response_list = stock_plugin_url_get_json($url);
             //if the cache is locked, start the loop again after half a second.
             
             
@@ -51,7 +79,7 @@ function stock_ticker_get_data($stock_list){
                 } else {
                     //if the data exists and didnt result in a cache error, it is added to the 
                     //valid stock list.
-                    $data_list = stock_ticker_proccess_data($data);
+                    $data_list = stock_plugin_proccess_data($data);
                     $valid_stock_data[$key] = $data_list;
                 }
             }
@@ -66,34 +94,8 @@ function stock_ticker_get_data($stock_list){
         }
     }
     return array('invalid_stocks' => $invalid_stock_data, 'valid_stocks' => $valid_stock_data );
-}
-
-//The cache returns a string of the data elements separated by commas. This funciton
-//Splits the string by the commas, removes any single quote marks('), and returns
-//an array of the elements with the appropriate keys. 
-function stock_ticker_proccess_data($data_string){
-    $key_list = array(
-        'stock_sym','stock_name','last_val','change_val','change_percent',
-        'market_cap','fifty_week_range','pe_ratio','earning_per_share','revenue'
-        );
-    $data      = str_getcsv($data_string, ",", "'");
-    $data_list = array_combine($key_list, $data);
-    return $data_list;
-}
-
-function stock_ticker_url_get_json($Url) {
-    if (!function_exists('curl_init')){
-        die('CURL is not installed!');
-    }
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $Url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TRANSFERTEXT, false);
-    $output = curl_exec($ch);
-    curl_close($ch);
-    return json_decode($output, true); //2nd parameter is to return this as an assoc array instead of a stdObject
-}
-
+ }
+} //end if_function_exists
 
 ?>
 
