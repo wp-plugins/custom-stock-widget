@@ -53,10 +53,10 @@ h3.hndle {
     width:100%;
 }
 
-.widget-options-subsection .widget-options-display{
+.widget-options-subsection .section-options-display{
     margin-bottom:1px;
 } 
-.widget-options-subsection .admin_toggle{
+.widget-options-subsection .section_toggle{
     cursor:pointer;
     text-align: center;
     margin-bottom: 0px;

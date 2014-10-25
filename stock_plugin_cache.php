@@ -1,20 +1,13 @@
 <?php
 
+define('STOCK_PLUGIN_CACHE', true, false); //flag for whether this file was already included anywhere
+//NOTE: using the common files between the 2 plugins can lead to errors refrencing whichever plugin was initialized first
+//Notice: Undefined index: XXXXXXX in /home/rele17lemurs/fashion.17lemurs.com/wp-content/plugins/custom-stock-ticker/stock_plugin_cache.php
 
-//Grabs the data for the list of stocks and returns an array containing the required data as well as a
-//list of invalid stocks.
-//Returns:
-//array(
-//  'invalid_stocks'=> array('YHAAO', 'AAQ#'), 
-//  'valid_data' => array('YHOO'=>array('stock_sym'=>'YHOO'), 'GOOG'=>array()))
-
-if (!function_exists('stock_plugin_get_data')) { //since this file is shared between widget and ticker plugins, we need to only declare this ONCE
- function stock_plugin_get_data($stock_list){
-   
-  //The cache returns a string of the data elements separated by commas. This funciton
-  //Splits the string by the commas, removes any single quote marks('), and returns
-  //an array of the elements with the appropriate keys. 
-  function stock_plugin_proccess_data($data_string){
+//The cache returns a string of the data elements separated by commas. This funciton
+//Splits the string by the commas, removes any single quote marks('), and returns
+//an array of the elements with the appropriate keys. 
+function stock_plugin_proccess_data($data_string) {
     $key_list = array(
         'stock_sym','stock_name','last_val','change_val','change_percent',
         'market_cap','fifty_week_range','pe_ratio','earning_per_share','revenue'
@@ -22,9 +15,9 @@ if (!function_exists('stock_plugin_get_data')) { //since this file is shared bet
     $data      = str_getcsv($data_string, ",", "'");
     $data_list = array_combine($key_list, $data);
     return $data_list;
-  }
+}
 
-  function stock_plugin_url_get_json($Url) {
+function stock_plugin_url_get_json($Url) {
     if (!function_exists('curl_init')){
         die('CURL is not installed!');
     }
@@ -35,8 +28,18 @@ if (!function_exists('stock_plugin_get_data')) { //since this file is shared bet
     $output = curl_exec($ch);
     curl_close($ch);
     return json_decode($output, true); //2nd parameter is to return this as an assoc array instead of a stdObject
-  }
- 
+}
+
+
+//Grabs the data for the list of stocks and returns an array containing the required data as well as a
+//list of invalid stocks.
+//Returns:
+//array(
+//  'invalid_stocks'=> array('YHAAO', 'AAQ#'), 
+//  'valid_data' => array('YHOO'=>array('stock_sym'=>'YHOO'), 'GOOG'=>array()))
+
+function stock_plugin_get_data($stock_list) {
+    
     $valid_stock_data   = array();
     $invalid_stock_data = array();
     if (!empty($stock_list)) {
@@ -94,8 +97,7 @@ if (!function_exists('stock_plugin_get_data')) { //since this file is shared bet
         }
     }
     return array('invalid_stocks' => $invalid_stock_data, 'valid_stocks' => $valid_stock_data );
- }
-} //end if_function_exists
+}
+
 
 ?>
-

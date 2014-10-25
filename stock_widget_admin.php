@@ -1,12 +1,12 @@
 <?php
 
 /*
-	Plugin Name: Custom Stock Widget
-	Plugin URI: http://relevad.com/wp-plugins/
-	Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
-	Author: Relevad
-	Version: 1.0
-	Author URI: http://relevad.com/
+    Plugin Name: Custom Stock Widget
+    Plugin URI: http://relevad.com/wp-plugins/
+    Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
+    Author: Relevad
+    Version: 1.0
+    Author URI: http://relevad.com/
 
 */
 
@@ -27,728 +27,566 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 */
 
-include WP_CONTENT_DIR.'/plugins/custom-stock-widget/stock_plugin_cache.php';
-include WP_CONTENT_DIR."/plugins/custom-stock-widget/stock_widget_display.php";
-
-add_shortcode('stock-widget', 'stock_widget');
-
-add_option("stock_widget_category_stock_list", array('Default'=>array('GOOG','YHOO','AAPL')));
-add_option('stock_widget_default_market', "DOW");
-add_option('stock_widget_all_markets', array("DOW","TYO","LON","FRA","SHA"));
-//data display option: Market, Symbol, Last value, change value, change percentage, last trade
-add_option('stock_widget_data_display',array('market'=>0,'stock_sym'=>1,'last_val'=>1,'change_val'=>1,'change_percent'=>1,'last_trade'=>0));
-
-add_option('stock_widget_display_option_strings', array("Market","Symbol","Last Value","Change Value","Change Percentage","Last Trade"));
-//controls the maximum number of stocks displayed
-add_option('stock_widget_max_display', 5);
-//controls the stocks that are displayed if more are chosen than the maximum. Options are 'first' and 'random'
-add_option('stock_widget_display_type', 'First');
-//All of the display types
-add_option('stock_widget_all_display_types', array('First', 'Random'));
-//Controls the color scheme the array holds [Text, Border,Background1, Background2]
-add_option('stock_widget_color_scheme', array('#5DFC0A','#5DFC0A','black', 'grey'));
-//the size option holds (width,height)
-add_option('stock_widget_display_size', array(300,70));
-//Font options are (size, family)
-add_option('stock_widget_font_options', array(12, "Times"));
-//Default font types
-add_option('stock_widget_default_fonts', array('Arial','cursive','Gadget','Georgia','Impact','Palatino','sans-serif','serif','Times'));
-
-//options for vertical and horizontal lines
-add_option('stock_widget_draw_vertical_dash',false);
-
-add_option('stock_widget_draw_horizontal_dash', false);
-
-//The available change icon styles
-add_option('stock_widget_available_change_styles', array('None','Box','Parentheses'));
-
-add_option('stock_widget_advanced_style', 'margin:auto;');
-
-add_option('stock_widget_change_style', 'Box');
-
-add_option('stock_page_url','');
-
-//Holds the default settings
-add_option('stock_widget_default_settings',array(
-	'Classic'=>array(
-		'name'=>'Classic (black/white)', 
-		'font_family' =>'Arial', 
-		'font_color'=>'white', 
-		'back_color1'=> 'black',
-		'back_color2'=> 'black', 
-		'hori_lines'=>true, 
-		'verti_lines'=>false, 
-		'check_box'=>'Box'),
-	'Ocean'=>array(
-		'name'=>'Ocean (purple/blue)', 
-		'font_family' =>'Arial', 
-		'font_color'=>'white', 
-		'back_color1'=> '#3366CC', 
-		'back_color2'=> '#19A3FF', 
-		'hori_lines'=>false, 
-		'verti_lines'=>true, 
-		'check_box'=>'None'),
-	'Matrix'=>array(
-		'name'=>'Matrix (green/black)', 
-		'font_family' =>'Arial', 
-		'font_color'=>'#66FF33', 
-		'back_color1'=> 'black', 
-		'back_color2'=> 'black', 
-		'hori_lines'=>true, 
-		'verti_lines'=>false, 
-		'check_box'=>'None'),
-	'Minimal'=>array(
-		'name'=>'Minimal (transparent/black)', 
-		'font_family' =>'Arial', 
-		'font_color'=>'black', 
-		'back_color1'=> 'transparent', 
-		'back_color2'=> 'transparent', 
-		'hori_lines'=>true, 
-		'verti_lines'=>false, 
-		'check_box'=>'Parentheses'),
-	'Cotton Candy'=>array(
-		'name'=>'Cotton Candy (pink/purple)', 
-		'font_family' =>'cursive', 
-		'font_color'=>'#00FFFF', 
-		'back_color1'=> '#FF5050', 
-		'back_color2'=> '#CC66FF', 
-		'hori_lines'=>true, 
-		'verti_lines'=>false, 
-		'check_box'=>'None'),
-	));
-
-
-add_action('admin_init', 'stock_widget_admin_init');
-function stock_widget_admin_init() {
-	wp_register_style('stock_widget_admin_style',plugins_url('stock_widget_admin_style.css', __FILE__));
-	wp_enqueue_style('stock_widget_admin_style');
-	wp_register_script('stock_widget_admin_script',plugins_url('stock_widget_admin_script.js', __FILE__) ,array( 'jquery' ),false, false);
-	wp_enqueue_script('stock_widget_admin_script');
+if (!defined('STOCK_PLUGIN_UTILS') ) {
+    include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_utils.php'; //contains validation functions
+}
+if (!defined('STOCK_PLUGIN_CACHE') ) {
+    include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_cache.php';
 }
 
+include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php';
+
+$stock_widget_vp = array( //validation_parameters
+'max_display'  => array(1,20),
+'width'        => array(100,500),
+'height'       => array(100,1000),
+'font_size'    => array(5,32),
+'change_styles'=> array("None", "Box", "Parentheses")
+);
+
+function stock_widget_activate() {
+    add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL')); //Important no spaces
+    //add_option('stock_widget_default_market',          "DOW");  //unused but maybe in future
+    //add_option('stock_widget_all_markets',             array("DOW", "TYO", "LON", "FRA", "SHA"));  //unused but maybe in future
+//data display option: Market, Symbol, Last value, change value, change percentage, last trade
+    //add_option('stock_widget_data_display',            array("market" => 0, "stock_sym" => 1, "last_val" => 1, "change_val" => 1, "change_percent" => 1, "last_trade" => 0)); //TODO: I'd like to redo this
+                                                        //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
+    add_option('stock_widget_data_display',             array(0,1,1,1,1,0)); //NOTE: Hardcoded flags for which stock elements to display in a stock entry
+    //add_option('stock_widget_display_option_strings',  array("Market", "Symbol", "Last Value", "Change Value", "Change Percentage", "Last Trade"));  //In Future may allow user config
+
+    add_option('stock_widget_max_display',             5);  //controls the maximum number of stocks displayed
+//controls the stocks that are displayed if more are chosen than the maximum. Options are 'first' and 'random'
+
+    add_option('stock_widget_display_type',            "First");
+    //add_option('stock_widget_all_display_types',       array("First", "Random"));   //All of the display types
+
+    //TODO: border color is not used anywhere, add it!
+    add_option('stock_widget_color_scheme',            array("#5DFC0A", "#5DFC0A", "#000000", "#7F7F7F")); //[Text, Border, Background1, Background2]
+    add_option('stock_widget_display_size',            array(300, 70));     //(width, height)
+
+    add_option('stock_widget_font_options',            array(12, "Times")); //(size, family)
+    //add_option('stock_widget_default_fonts',           array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times"));
+
+    add_option('stock_widget_draw_vertical_dash',      false);
+    add_option('stock_widget_draw_horizontal_dash',    false);
+
+    //add_option('stock_widget_available_change_styles', array("None", "Box", "Parentheses"));
+    add_option('stock_widget_change_style',            "Box");
+
+    add_option('stock_widget_advanced_style',          "margin: auto;");
+    add_option('stock_page_url',                       "https://www.google.com/finance?q=__stock__");
+
+//Holds the default settings
+    add_option('stock_widget_default_settings', array(
+        'Classic' => array(
+            'name'         => 'Classic (black/white)', 
+            'font_family'  => 'Arial', 
+            'font_color'   => '#FFFFFF', 
+            'back_color1'  => '#000000',
+            'back_color2'  => '#000000', 
+            'hori_lines'   => true, 
+            'verti_lines'  => false, 
+            'check_box'    => 'Box'),
+        'Ocean' => array(
+            'name'         => 'Ocean (purple/blue)', 
+            'font_family'  => 'Arial', 
+            'font_color'   => '#FFFFFF', 
+            'back_color1'  => '#3366CC', 
+            'back_color2'  => '#19A3FF', 
+            'hori_lines'   => false, 
+            'verti_lines'  => true, 
+            'check_box'    => 'None'),
+        'Matrix' => array(
+            'name'         => 'Matrix (green/black)', 
+            'font_family'  => 'Arial', 
+            'font_color'   => '#66FF33', 
+            'back_color1'  => '#000000', 
+            'back_color2'  => '#000000', 
+            'hori_lines'   => true, 
+            'verti_lines'  => false, 
+            'check_box'    => 'None'),
+        'Minimal' => array(
+            'name'         => 'Minimal (transparent/black)', 
+            'font_family'  => 'Arial', 
+            'font_color'   => '#000000', 
+            'back_color1'  => 'transparent', 
+            'back_color2'  => 'transparent', 
+            'hori_lines'   => true, 
+            'verti_lines'  => false, 
+            'check_box'    => 'Parentheses'),
+        'Cotton Candy' => array(
+            'name'         => 'Cotton Candy (pink/purple)', 
+            'font_family'  => 'cursive', 
+            'font_color'   => '#00FFFF', 
+            'back_color1'  => '#FF5050', 
+            'back_color2'  => '#CC66FF', 
+            'hori_lines'   => true, 
+            'verti_lines'  => false, 
+            'check_box'    => 'None'),
+    ));
+}
+register_activation_hook( __FILE__, 'stock_widget_activate' );
+
+//*********cleanup and conversion functions for updating versions 1.0 -> 1.1 *********
+if (get_option('stock_widget_category_stock_list')) { //this old option exists
+    stock_plugin_convert_old_category_stock_list('widget');
+    
+    $tmp = get_option('stock_widget_data_display');
+    update_option('stock_widget_data_display', array_values($tmp));
+}
+
+
+function stock_widget_admin_enqueue($hook) {
+    if ($hook != 'settings_page_stock_widget_admin') {return;} //do not run on other admin pages
+
+    wp_register_style ('stock_widget_admin_style',  plugins_url('stock_widget_admin_style.css', __FILE__));
+    wp_register_script('stock_widget_admin_script', plugins_url('stock_widget_admin_script.js', __FILE__), array( 'jquery' ), false, false);
+
+    wp_enqueue_style ('stock_widget_admin_style');
+    wp_enqueue_script('stock_widget_admin_script');
+    
+    stock_widget_scripts_enqueue(true); //we also need these scripts
+}
+add_action('admin_enqueue_scripts', 'stock_widget_admin_enqueue');
+
+function stock_widget_admin_actions(){
+    add_options_page('StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', 'stock_widget_admin_page'); //TODO: make consistent with stock ticker
+    //add_submenu_page( 'options-general.php', $page_title, $menu_title, $capability, $menu_slug, $function ); // do not use __FILE__ for menu_slug
+}
 add_action('admin_menu', 'stock_widget_admin_actions');
 
 
+function stock_widget_reset_options() {
+    update_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL')); //Important no spaces
+    update_option('stock_widget_default_market',          "DOW"); //unused but maybe in future
+    //update_option('stock_widget_all_markets',             array("DOW", "TYO", "LON", "FRA", "SHA"));  //unused maybe in future
+                                                          //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
+    update_option('stock_widget_data_display',            array(0,1,1,1,1,0));
+    //update_option('stock_widget_display_option_strings',  array("Market", "Symbol", "Last Value", "Change Value", "Change Percentage", "Last Trade"));  //In Future may allow user config
 
- function stock_widget_admin_actions(){
+    update_option('stock_widget_max_display',             5);  //controls the maximum number of stocks displayed
+    //controls the stocks that are displayed if more are chosen than the maximum. Options are 'first' and 'random'
+    update_option('stock_widget_display_type',            "First");
 
- 	add_options_page('StockWidget', 'StockWidget', 'manage_options', __FILE__, 'stock_widget_admin');
-
+    //update_option('stock_widget_all_display_types',       array("First", "Random"));   //All of the display types
+    update_option('stock_widget_color_scheme',            array("#5DFC0A", "#5DFC0A", "#000000", "#7F7F7F")); //[Text, Border, Background1, Background2]
+    update_option('stock_widget_display_size',            array(300, 70));     //(width, height)
+    update_option('stock_widget_font_options',            array(12, "Times")); //(size, family)
+    //update_option('stock_widget_default_fonts',           array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times"));
+    update_option('stock_widget_draw_vertical_dash',      false);
+    update_option('stock_widget_draw_horizontal_dash',    false);
+    //update_option('stock_widget_available_change_styles', array("None", "Box", "Parentheses"));
+    update_option('stock_widget_advanced_style',          "margin: auto;");
+    update_option('stock_widget_change_style',            "Box");
+    update_option('stock_page_url',                       "https://www.google.com/finance?q=__stock__");
 }
 
 
 
 
-/*
-*This is the admin page. 
-*
-*/
-function stock_widget_admin(){
-?>
+/** Creates the admin page. **/
+function stock_widget_admin_page(){
 
-	
+    echo <<<HEREDOC
 <div id="widget-options-page" style="max-width:850px;">
 
-	<h1>Custom Stock Widget</h1>
-	<p>The Custom Stock Widget plugin allows you to create and run your own custom stock table widgets.</p>
-	<p>Choose your stocks and display settings below.<br />
-	Then place your the shortcode <code>[stock-widget]</code> inside a post, page, or <a href="https://wordpress.org/plugins/shortcode-widget/" ref="external nofollow" target="_blank">Shortcode Widget</a>.<br />
-	Or, you can use <code>&lt;?php echo do_shortcode('[stock-widget]'); ?&gt;</code> inside your theme files or <a href="https://wordpress.org/plugins/php-code-widget/" ref="external nofollow" target="_blank">PHP Code Widget</a>.
-	</p>
-	
-	
-	<?php
-	echo '<form action="" method="POST">';
-	if(isset($_POST['save_changes'])){
-		stock_widget_update_display_options();
-		stock_widget_create_display_options();
-	}else{
-		stock_widget_create_display_options();
-	}
-	echo '</form>';
+    <h1>Custom Stock Widget</h1>
+    <p>The Custom Stock Widget plugin allows you to create and run your own custom stock table widgets.</p>
+    <p>Choose your stocks and display settings below.<br />
+    Then place your the shortcode <code>[stock-widget]</code> inside a post, page, or <a href="https://wordpress.org/plugins/shortcode-widget/" ref="external nofollow" target="_blank">Shortcode Widget</a>.<br />
+    Or, you can use <code>&lt;?php echo do_shortcode('[stock-widget]'); ?&gt;</code> inside your theme files or <a href="https://wordpress.org/plugins/php-code-widget/" ref="external nofollow" target="_blank">PHP Code Widget</a>.
+    </p>
+    
+HEREDOC;
+    
+    if (isset($_POST['save_changes'])){
+        stock_widget_update_options();   
+    } 
+    elseif (isset($_POST['reset_options'])) {
+        stock_widget_reset_options();
+    }
+        stock_widget_create_display_options();
 
-	echo '	<div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
-				<div id="normal-sortables" class="meta-box-sortables ui-sortable">
-					<div id="referrers" class="postbox">
-						<h3 class="hndle"><span>Preview</span></h3>
-						<div class="inside">
-						<p>Based on the last saved settings, this is what the default <code>[stock-widget]</code> shortcode will generate:</p>
-';
-	echo do_shortcode('[stock-widget]');
-	echo '			<p>To preview your latest changes to settings, you must first save changes.</p>
-						</div>
-					</div>
-				</div>
-			</div>';
-		echo '	<div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
-				<div id="normal-sortables" class="meta-box-sortables ui-sortable">
-					<div id="referrers" class="postbox">
-						<h3 class="hndle"><span>Advanced</span></h3>
-						<div class="inside">
-							<p>If you want to run a custom style, you can specify the style parameters in the shortcode. See the example below:</p>
-								<input type="text" onclick="this.select();" readonly="readonly" value="[stock-widget display=&quot;4&quot; width=&quot;300&quot; height=&quot;100&quot; background_color1=&quot;#336633&quot; background_color2=&quot;#663333&quot; text_color=&quot;#ffff00&quot;]" class="shortcode-in-list-table wp-ui-text-highlight code" style="width: 100%; font-size: smaller;"></p>';
-
-		echo do_shortcode('[stock-widget display="4" width="300" height="100" background_color1="#336633" background_color2="#663333" text_color="#ffff00"]');
-
-		echo '
-						</div>
-					</div>
-				</div>
-			</div>';
-	echo '</div>';
-
+    echo <<<HEREDOC
+            <div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
+                <div id="normal-sortables" class="meta-box-sortables ui-sortable">
+                    <div id="referrers" class="postbox">
+                        <h3 class="hndle"><span>Preview</span></h3>
+                        <div class="inside">
+                           <p>Based on the last saved settings, this is what the default <code>[stock-widget]</code> shortcode will generate:</p>
+HEREDOC;
+    echo do_shortcode('[stock-widget]');
+    //TODO: Add ID and in page style to remove inline styles
+    $example_id_01 = "[stock-widget display='4' id='example_id_01' width='300' height='100' background_color1='#336633' background_color2='#663333' text_color='#ffff00' change_style='Parentheses']";
+    echo <<<HEREDOC
+                           <p>To preview your latest changes to settings, you must first save changes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
+                <div id="normal-sortables" class="meta-box-sortables ui-sortable">
+                    <div id="referrers" class="postbox">
+                        <h3 class="hndle"><span>Advanced</span></h3>
+                        <div class="inside">
+                            <p>If you want to run a custom style, you can specify the style parameters in the shortcode. See the example below:</p>
+                                <input type="text" onclick="this.select();" readonly="readonly" value="{$example_id_01}" class="shortcode-in-list-table wp-ui-text-highlight code" style="width: 100%; font-size: smaller;"></p>
+HEREDOC;
+        echo do_shortcode($example_id_01);
+    echo <<<HEREDOC
+                        </div>
+                    </div>
+                </div>
+            </div>
+</div><!-- end options page -->
+HEREDOC;
 }
 
 //Creates the entire options page. Useful for formatting.
 function stock_widget_create_display_options(){
-		echo '<div class="postbox-container widget-options" style="width: 50%; margin-right: 10px; clear:left;">
-				<div id="normal-sortables" class="meta-box-sortables ui-sortable">
-					<div id="referrers" class="postbox">
-						<h3 class="hndle">Display Settings</h3>
-						<div class="inside">';
-							stock_widget_create_default_settings_field();
-		echo '				<p>All options below are <b>optional</b>.<br>All are reset by choosing a style above.</p>
-							<div class="widget-options-subsection">
-								<h4>Widget Settings</h4> 
-								<div class="admin_toggle">+</div>
-								<div class="widget-options-display">';
-									stock_widget_create_size_field();
-									stock_widget_create_max_display_field();
-		echo'						<br>';
-									stock_widget_create_background_color_field();
-		echo '					</div>
-							</div>';
-		echo '				<div class="widget-options-subsection">
-								<h4>Text Settings</h4>
-								<div class="admin_toggle">+</div>
-								<div class="widget-options-display">';
-									stock_widget_create_font_field();
-		echo '					</div>
-							</div>';
-		echo '				<div class="widget-options-subsection">
-								<h4>Widget Features</h4>
-								<div class="admin_toggle">+</div>
-								<div class="widget-options-display">';
-									stock_widget_create_display_options_list();
-									stock_widget_create_draw_dash_field();
-									echo '<br>';
-									stock_widget_create_display_type_field();
-									echo '<br>';
-								
-
-		echo '					</div>
-							</div>';
-		echo '				<div class="widget-options-subsection">
-								<h4>Advanced Styling</h4>
-								<div class="admin_toggle">+</div>
-								<div class="widget-options-display">';
-									stock_widget_create_style_field();
-		echo '					</div>
-							</div>';
-		echo '				<div class="widget-options-subsection">
-								<h4>URL Link</h4>
-								<div class="admin_toggle">+</div>
-								<div class="widget-options-display">';
-									stock_widget_create_url_field();
-		echo '					</div>
-							</div>';
-		echo '			</div>
-					</div>
-				</div>
-				<input style="margin-bottom:20px;" type="submit" name="save_changes" value="Save Changes" class="button-primary"/>
-			</div>';
-		
-		echo '	<div class="postbox-container widget-options" style="width: 45%; clear:right;">
-					<div id="normal-sortables" class="meta-box-sortables ui-sortable">
-						<div id="referrers" class="postbox">
-							<h3 class="hndle"><span>Stocks</span></h3>
-							<div class="inside">
-								<p>Type in your stocks as a comma-separated list.<br> 
-								Example: <code>GOOG,YHOO,AAPL</code>.</p>
-								<p>
-									When a page loads with a ticker, the stocks list of the category of that page is loaded. 
-									If that category has no stocks associated with it, the default list is loaded.
-								</p>
-								<p>For Nasdaq, use <code>^IXIC</code>. For S&amp;P500, use <code>^GSPC</code>. Unfortunately, DOW is currently not available.</p>
-								';
-								stock_widget_create_category_stock_list();
-		echo '				</div>
-						</div>
-					</div>
-				</div>';
-	return;
+        echo "<form action='' method='POST'>
+             <div class='postbox-container widget-options' style='width: 50%; margin-right: 10px; clear:left;'>
+                <div id='normal-sortables' class='meta-box-sortables ui-sortable'>
+                    <div id='referrers' class='postbox'>
+                        <h3 class='hndle'>Default Widget Display Settings</h3>
+                        <div class='inside'>";
+                            stock_widget_create_default_settings_field();  //this is actually apply template
+        echo "              <p>All options below are <b>optional</b>.<br />All are reset by choosing a style above.</p>
+                            <div class='widget-options-subsection'>
+                                <h4>Widget Config</h4> 
+                                <div class='section_toggle'>+</div>
+                                <div class='section-options-display'>";
+                                    stock_widget_create_widget_config_section();
+        echo "                      <br />";
+                                    stock_widget_create_background_color_field();
+        echo "                  </div>
+                            </div>
+                            <div class='widget-options-subsection'>
+                                <h4>Text Config</h4>
+                                <div class='section_toggle'>+</div>
+                                <div class='section-options-display'>";
+                                    stock_widget_create_text_config();
+        echo "                  </div>
+                            </div>
+                            <div class='widget-options-subsection'>
+                                <h4>Stock Display Config</h4>
+                                <div class='section_toggle'>+</div>
+                                <div class='section-options-display'>";
+                                    stock_widget_create_widget_features();
+       echo "                       <br />";
+                                    stock_widget_create_display_type_field();
+       echo "                       <br />
+                                </div>
+                            </div>
+                           <div class='widget-options-subsection'>
+                                <h4>Advanced Styling</h4>
+                                <div class='section_toggle'>+</div>
+                                <div class='section-options-display'>";
+                                    stock_widget_create_style_field();
+        echo "                  </div>
+                            </div>
+                           <div class='widget-options-subsection'>
+                                <h4>URL Link</h4>
+                                <div class='section_toggle'>+</div>
+                                <div class='section-options-display'>";
+                                    stock_widget_create_url_field();
+        echo "                  </div>
+                    </div>
+                </div>
+                    </div><!--end referrers -->
+                </div>
+                <input style='margin-bottom:20px;' type='submit' name='save_changes'  value='Save Changes'      class='button-primary'/>
+                <input style='margin-bottom:20px;' type='submit' name='reset_options' value='Reset to Defaults' class='button-primary'/>
+            </div>
+        
+            <div class='postbox-container widget-options' style='width: 45%; clear:right;'>
+                    <div id='normal-sortables' class='meta-box-sortables ui-sortable'>
+                        <div id='referrers' class='postbox'>
+                            <h3 class='hndle'><span>Stocks</span></h3>
+                            <div class='inside'>
+                                <p>Type in your stocks as a comma-separated list.<br /> 
+                                Example: <code>GOOG,YHOO,AAPL</code>.</p>
+                                <p>
+                                    When a page loads with a widget shortcode, the stocks list for the category(s) of that page is loaded.
+                                    If that category has no stocks associated with it, the default list is loaded.
+                                </p>
+                                <p>For Nasdaq, use <code>^IXIC</code>. For S&amp;P500, use <code>^GSPC</code>. Unfortunately, DOW is currently not available.</p>
+                                <p>Here are some example stocks you can try:<br/>
+                                BAC, CFG, AAPL, YHOO, SIRI, VALE, QQQ, GE, MDR, RAD, BABA, SUNE, FB, BBRY, MSFT, MU, PFE, F, GOOG</p>";
+                                stock_plugin_create_per_category_stock_lists('widget');
+        echo "              </div>
+                        </div>
+                    </div>
+            </div>
+            </form>";
+    return;
 }
 
-function stock_widget_update_display_options(){
-		stock_widget_update_category_stock_list();
-	//	stock_widget_update_market_list();
-		stock_widget_update_display_options_list();
-		stock_widget_update_max_display_field();
-		stock_widget_update_draw_dash_field();
-		stock_widget_update_display_type_field();
-		stock_widget_update_color_field();
-		stock_widget_update_size_font_field();
-		stock_widget_update_default_settings_field();
-		stock_widget_update_style_field();
-		stock_widget_update_url_field();
-		return;
-}
+function stock_widget_update_options() {
+    stock_plugin_update_per_category_stock_lists('widget');
 
-//Generates the html for the listbox of markets
-function stock_widget_create_market_list(){
-	?>
-		Default Market:
-			<select name="markets">
-				<?php
-				$default_mark=get_option('stock_widget_default_market');
-				echo '<option selected>'.$default_mark;
-				$markets=get_option('rele_all_markets');
-				if(!empty($markets)){
-					foreach($markets as $market){
-						if($default_mark!=$market){
-						echo "<option >".$market;
-						}
-					}
-				}	
-				?>
-
-			</select>
-
-	<?php
-}
-function stock_widget_update_market_list(){
-
-		$market = $_POST['markets'];
-		update_option('stock_widget_default_market', $market);
-}
-
-
-//Generates the html for the list of stocks in each category
-function stock_widget_create_category_stock_list(){
-	$category_stock_list=get_option('stock_widget_category_stock_list');
-	$category_ids = get_all_category_ids();
-	array_unshift ($category_ids,-1);
-	$nocat=false;
-	foreach($category_ids as $id){
-		if($id==-1){
-			$cat_id='Default';
-			$name='';
-		}else{
-			$name = get_cat_name($id);
-			$cat_id=preg_replace('/\s+/', '', $name);
-			if($cat_id=='Uncategorized'){
-				continue;
-			}
-		}
-
-		$stock_list=$category_stock_list[$cat_id];
-		$stocks_string="";
-		//if the list of this category is not empty, built the list of stocks for the output
-		if(!empty($stock_list)){		
-			//Append each stock to the output string. Check to see if the stock is in the default market
-			//(in which case do not output the market.)	
-				
-			$stocks_string=implode(',',$stock_list);
-		}elseif($cat_id=='Default'){
-			echo '<h4>Warning: Leaving this field blank may cause some widgets to not show up.</h4>';
-
-		}
-
-?>
-		
-		<?php echo $name; ?>
-		<br>
-		<input style="width:100%; font-size:14px" type="text" name="<?php echo $cat_id; ?>_stocks" id="<?php echo $cat_id; ?>_stock_list" value="<?php echo $stocks_string; ?>"/>
-		
-			
-	
-	<?php
-		if($cat_id=='Default'){
-			echo '	<h4 style="display:inline-block;">Customize Categories</h4>
-					<div id="category_toggle" class="admin_toggle">+</div>
-					
-						<div class="widget-options-display">';
-			//if default is the only category, this variable will become true, indicating that the
-			//site does not have any categories. Used to display a little message
-			$nocat=true;
-		}else{
-			$nocat=false;
-		}
-	}
-	if($nocat){
-		echo '<p> Your site does not appear to have any categories to display.</p>';
-	}
-	echo '</div>';
-}
-
-function stock_widget_update_category_stock_list(){
-	$category_stock_list=array();
-	$category_ids = get_all_category_ids();
-	array_unshift ($category_ids,-1);
-	$all_bad_stock_list=array();
-	foreach($category_ids as $id){
-		if($id==-1){
-			$cat_id='Default';
-		}else{
-			$name = get_cat_name($id);
-			$cat_id=preg_replace('/\s+/', '', $name);
-			if($cat_id=='Uncategorized'){
-				continue;
-			}
-		}
-		$input = strtoupper ($_POST[$cat_id."_stocks"]);
-		$input=preg_replace('/\s+/', '', $input);
-		$input_list = explode(",", $input);
-		if(empty($input_list)){
-			$category_stock_list[$cat_id]=array();
-			continue;
-		}
-		$input_list=array_unique($input_list);
-		//runs the caching function on the given stocks list to see if any of the stocks were invalid.
-		$cache_output=stock_plugin_get_data($input_list);
-		$bad_stock_list=$cache_output['invalid_stocks'];
-		if(!empty($bad_stock_list)){
-			//get the difference of the two arrays, filter the empty values, and condense the array
-			$stock_list_difference=array_diff($input_list, $bad_stock_list);
-			$validated_stock_list=array_values($stock_list_difference);
-			$all_bad_stock_list=array_merge($bad_stock_list, $all_bad_stock_list);
-		}else{
-			$validated_stock_list=array_filter($input_list);
-		}
-		$category_stock_list[$cat_id]=$validated_stock_list;
-
-	}
-	if(!empty($all_bad_stock_list)){
-		?>
-			<p style="font-size:14px;font-weight:bold;">
-				The following stocks were not found: 
-				<?php
-					echo implode(', ',$all_bad_stock_list);
-				?>.
-			</p>
-		<?php
-	}
-	update_option('stock_widget_category_stock_list', $category_stock_list);	
-}
-
-//Generates the html for the list of configurable options
-function stock_widget_create_display_options_list(){
-	$display_options=get_option('stock_widget_data_display');
-	$display_option_strings=get_option('stock_widget_display_option_strings');
-	$counter=-1;
-	foreach ($display_options as $display){
-		$counter++;
-		//Skips displaying the "symbol" option. Who would want to hide the symbol?
-		//Also skips last trade and market. Who needs that stuff?
-		if($counter==1||$counter==0||$counter==5){
-			continue;
-		}
-		if($display==1){
-			$checked="checked";
-		}else{
-			$checked="";
-		}
-		?>
-		
-		<input name="stock_checkbox[]" type="checkbox" id="checkbox_<?php echo $counter;?>" value="<?php echo $counter;?>"<?php echo $checked;?>>
-		<label for="checkbox_<?php echo $counter;?>"><?php echo $display_option_strings[$counter];?></label>	
-		<br>
-		<?php
-		
-	}
-	?>
-	
-	<?php
-
-}
-function stock_widget_update_display_options_list(){
-	$new_display_options=array(0,1,0,0,0,0);
-    foreach($_POST['stock_checkbox'] as $key){
-        $new_display_options[$key]=1;
+    $apply_template = $_POST['default_settings'];
+    if($apply_template != '-------') {
+        stock_widget_update_default_settings_field($apply_template); //this is actually apply template
     }
-    $new_display_hash=array('market'=>$new_display_options[0],'stock_sym'=>$new_display_options[1],'last_val'=>$new_display_options[2],
-    	'change_val'=>$new_display_options[3],'change_percent'=>$new_display_options[4],'last_trade'=>$new_display_options[5]);
-    update_option('stock_widget_data_display',$new_display_hash);
+    else { //all of these settings are handled by the template, therefore don't bother updating them if template being applied
+
+        $new_display_options = array( //these are checkboxes
+            0, //market
+            1, //stock symbol
+            array_key_exists('last_value',     $_POST),
+            array_key_exists('change_value',   $_POST),
+            array_key_exists('change_percent', $_POST),
+            0  //last trade
+        );
+        update_option('stock_widget_data_display', $new_display_options);
+        update_option('stock_widget_draw_vertical_dash',   array_key_exists('vertical_dash',   $_POST));
+        update_option('stock_widget_draw_horizontal_dash', array_key_exists('horizontal_dash', $_POST)); //these are checkboxes
+
+        update_option('stock_widget_display_type',         $_POST['display_type']); //these are dropdowns
+        update_option('stock_widget_change_style',         $_POST['change_style']);
+        
+        global $stock_widget_vp;
+        //If returns false, it will NOT update them, and the display creation function will continue to use the most recently saved value
+        //IN FUTURE: this will be replaced with AJAX and javascript validation
+        // when we add in ajax later, we'll want to have a small piece of JS written to admin page, 
+        //this will contain the ajax destination, that way we can merge javascript file code between plugins
+        
+        //NOTE: stock_plugin_validate_integer($new_val, $min_val, $max_val, $default)
+        $tmp = stock_plugin_validate_integer($_POST['max_display'],  $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  false);
+        if ($tmp) { update_option('stock_widget_max_display', $tmp); }
+
+        // VALIDATE overall height/width for the whole table
+        //Could we make this used for the "row" height? Each stock row is this high?
+        $current_display = get_option('stock_widget_display_size'); 
+        $tmp1 = stock_plugin_validate_integer($_POST['width'],  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $current_display[0]);
+        $tmp2 = stock_plugin_validate_integer($_POST['height'], $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $current_display[1]);
+        update_option('stock_widget_display_size', array($tmp1, $tmp2));
+        
+        // VALIDATE fonts
+        $current_font_opts = get_option('stock_widget_font_options');
+        $tmp1 = stock_plugin_validate_integer(    $_POST['font_size'],   $stock_widget_vp['font_size'][0],  $stock_widget_vp['font_size'][1],  $current_font_opts[0]);
+        $tmp2 = stock_plugin_validate_font_family($_POST['font_family'], $current_font_opts[1]);
+        update_option('stock_widget_font_options', array($tmp1, $tmp2));
+        
+        // VALIDATE COLORS
+        $current_colors = get_option('stock_widget_color_scheme');
+        $tmp1 = stock_plugin_validate_color($_POST['text_color'],        $current_colors[0]);
+        //$tmp2 = stock_plugin_validate_color($_POST['border_color'],      $current_colors[1]); //TODO: border is currently not used at all
+        $tmp3 = stock_plugin_validate_color($_POST['background_color1'], $current_colors[2]);
+        $tmp4 = stock_plugin_validate_color($_POST['background_color2'], $current_colors[3]);
+        update_option('stock_widget_color_scheme', array($tmp1, $current_colors[1], $tmp3, $tmp4));
+        
+        update_option('stock_page_url',              $_POST['stock_page_url']); //TODO: use preg_replace when writing to page
+        update_option('stock_widget_advanced_style', $_POST['widget_advanced_style']); //no validation needed
+    }
 }
 
-function stock_widget_create_max_display_field(){
-	?>
-		<label for="max_display">Maximum number of stocks displayed: </label>
-		<input style="width:29px; font-size:14px; text-align:center" type="text" name="max_display" id="max_display" value="<?php echo get_option('stock_widget_max_display'); ?>"/>
-	<?php
+//Generates the html for the list of configurable options ( example: vertical lines & change value )
+function stock_widget_create_widget_features() {
+    $display_options = get_option('stock_widget_data_display');  //this contains stock symbol attributes
+    
+    //NOTE: options 0 and 1 are "market" and the "stock symbol" itself
+    //      option 5 is the "last trade"
+?>
+    <label for='input_last_value'>Last Value</label>
+    <input  id='input_last_value'     name='last_value'     type='checkbox' <?php echo ($display_options[2] == 1 ? 'checked' : '')?>>
+    <br />
+    <label for='input_change_value'>Change Value</label>
+    <input  id='input_change_value'   name='change_value'   type='checkbox' <?php echo ($display_options[3] == 1 ? 'checked' : '')?>>
+    <br />
+    <label for='input_change_percent'>Change Percent</label>
+    <input  id='input_change_percent' name='change_percent' type='checkbox' <?php echo ($display_options[4] == 1 ? 'checked' : '')?>>
+    <br />
+    <label for='input_vertical_dash'>Vertical Dash</label>
+    <input  id='input_vertical_dash'  name='vertical_dash'  type='checkbox' <?php echo (get_option('stock_widget_draw_vertical_dash')   ? 'checked' : '')?>>
+    <br />
+    <label for='input_horizontal_dash'>Horizontal Dash</label>
+    <input  id='input_horizontal_dash'name='horizontal_dash'type='checkbox' <?php echo (get_option('stock_widget_draw_horizontal_dash') ? 'checked' : '')?>>
+    <br />
+       
+    <?php
 }
 
-function stock_widget_update_max_display_field(){
-	$new_max=intval($_POST['max_display']);
-	if($new_max>100){
-		$new_max=100;
-	}
-	update_option('stock_widget_max_display', $new_max);
+//TODO: Just merge all these stupid functions, they don't serve any purpose other than to confuse people and make extra function calls  . All sections -> one section
+
+function stock_widget_create_widget_config_section() {
+    $size = get_option('stock_widget_display_size');
+    $max  = get_option('stock_widget_max_display');
+    echo <<< HEREDOC
+        <label for="input_width">Width: </label>
+        <input  id="input_width"  name="width"  type="text" value="{$size[0]}" style="width:60px; font-size:14px" />
+        <label for="input_height">Height: </label>
+        <input  id="input_height" name="height" type="text" value="{$size[1]}" style="width:60px; font-size:14px" />
+        <br />
+        <label for="input_max_display">Maximum number of stocks displayed: </label>
+        <input  id="input_max_display" name="max_display" type="text" value="{$max}" style="width:29px; font-size:14px; text-align:center" />
+HEREDOC;
 }
 
-function stock_widget_create_display_type_field(){
-	$all_types=get_option('stock_widget_all_display_types');
-	$current_type=get_option('stock_widget_display_type');
-	?>
-		<label for="display_type">Order: </label>
-		<select name="display_type" id="display_type" style="width: 70px;">
-			<option selected>
-		<?php 
-			echo $current_type;
-			foreach($all_types as $type){
-				if($type==$current_type){
-					continue;
-				}
-				echo "<option>".$type;
-			}
-		?>
-		</select>
-	<?php
-	$all_change_styles=get_option('stock_widget_available_change_styles');
-	$current_style=get_option('stock_widget_change_style');
-	?>
-		<br>
-		<label for="changle_style">Price Change Style: </label>
-		<select name="changle_style" id="changle_style" style="width: 100px;">
-			<option selected>
-		<?php 
-			echo $current_style;
-			foreach($all_change_styles as $style){
-				if($style==$current_style){
-					continue;
-				}
-				echo "<option>".$style;
-			}
-		?>
-		</select>
-	<?php
+
+
+function stock_widget_create_display_type_field() {
+    $all_types    = array("First", "Random");  //TODO: rename "first" to mean something that makes sense
+    $current_type = get_option('stock_widget_display_type');
+    ?>
+        <label for="input_display_type">Order: </label>
+        <select id="input_display_type" name="display_type"  style="width: 70px;">
+        <?php 
+            foreach($all_types as $type) {
+                echo "<option " . ($type == $current_type ? "selected" : "") . ">{$type}</option>";
+            }
+        ?>
+        </select>
+        <br />
+    <?php
+    global $stock_widget_vp;
+    $all_change_styles = $stock_widget_vp['change_styles'];
+    $current_style     = get_option('stock_widget_change_style');
+    ?>
+        <label for="input_change_style">Price Change Style: </label>
+        <select id="input_change_style" name="change_style"  style="width: 100px;">
+        <?php 
+            foreach($all_change_styles as $style) {
+                echo "<option " . ($style == $current_style ? "selected" : "") . ">{$style}</option>";
+            }
+        ?>
+        </select>
+    <?php
 }
 
-function stock_widget_update_display_type_field(){
-	update_option('stock_widget_display_type',$_POST['display_type']);
-	update_option('stock_widget_change_style',$_POST['changle_style']);
-}
+
 
 function stock_widget_create_background_color_field(){
-	$current_colors=get_option('stock_widget_color_scheme');
-	?>
-	
-	<label for="background_color1">Color 1</label><sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" style="text-decoration:none" ref="external nofollow" target="_blank" title="Use hex to pick colors!">[?]</a></sup>:
-	<input style="width:70px;" name="background_color1" id="background_color1" type="text" value="<?php echo $current_colors[2]; ?>"/>
-	<br>
-	<label for="background_color2">Color 2</label><sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" style="text-decoration:none" ref="external nofollow" target="_blank" title="Use hex to pick colors!">[?]</a></sup>:
-	<input style="width:70px;" name="background_color2" id="background_color2" type="text" value="<?php echo $current_colors[3]; ?>"/>
-
-
+    $current_colors = get_option('stock_widget_color_scheme');
+    ?>
+    
+    <label for="input_background_color1">Odd Row Background Color:</label>
+    <input  id="input_background_color1" name="background_color1" type="text" value="<?php echo $current_colors[2]; ?>" style="width:70px;" />
+    <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+    <br />
+    <label for="input_background_color2">Even Row Background Color:</label>
+    <input  id="input_background_color2" name="background_color2" type="text" value="<?php echo $current_colors[3]; ?>" style="width:70px;" />
+    <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
 <?php
 
 }
 
-function stock_widget_update_color_field(){
-	$new_colors=array($_POST['text_color'],$_POST['border_color'],$_POST['background_color1'],$_POST['background_color2']);
-	$default_colors=get_option('stock_widget_color_scheme');
-	if($new_colors[0]==""){
-		$new_colors[0]=$default_colors[0];
-	}
-	if($new_colors[1]==""){
-		$new_colors[1]=$default_colors[1];
-	}
-	if($new_colors[2]==""){
-		$new_colors[2]=$default_colors[2];
-	}
-	if($new_colors[3]==""){
-		$new_colors[3]=$default_colors[3];
-	}
-	update_option('stock_widget_color_scheme', $new_colors);
-}
-
-function stock_widget_create_size_field(){
-	$size=get_option('stock_widget_display_size');
-	?>
-		<label for="stock_widget_width">Width: </label>
-		<input style="width:60px; font-size:14px" type="text" name="stock_widget_width" id="stock_widget_width" value="<?php echo $size[0]; ?>"/>
-		<label for="stock_widget_height">Height: </label>
-		<input style="width:60px; font-size:14px" type="text" name="stock_widget_height" id="stock_widget_height" value="<?php echo $size[1]; ?>"/>
-		<br>
 
 
-	<?php
 
-}
-function stock_widget_create_font_field(){
-		$font_options=get_option('stock_widget_font_options');
-	$default_fonts=get_option('stock_widget_default_fonts');
-	$current_colors=get_option('stock_widget_color_scheme');
-	?>
-		<label for="text_color">Color</label><sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" style="text-decoration:none" ref="external nofollow" target="_blank" title="Use hex to pick colors!">[?]</a></sup>:
-		<input style="width:70px; text-align:left;" name="text_color" id="text_color" type="text" value="<?php echo $current_colors[0]; ?>"/>
-		<label for="font_size">Size: </label>
-		<input style="width:29px; text-align:left;" type="text" name="font_size" id="font_size" value="<?php echo $font_options[0]; ?>"/>
-		<label for="font_family">Family: </label>
-		<input style="width:70px; text-align:left;" name="font_family" id="font_family" list="font_families" autocomplete="on"/>
-		<datalist id="font_families">
-		<?php
-			foreach($default_fonts as $font){
-				echo '<option value="'.$font.'">';
-			}
-		?>
-		</datalist>
-	<?php
-}
-
-function stock_widget_update_size_font_field(){
-	$display_size=get_option('stock_widget_display_size');
-	$font_options=get_option('stock_widget_font_options');
-	$old_data=array($display_size[0],$display_size[1],$font_options[0],$font_options[1]);
-	$new_data=array($_POST['stock_widget_width'],$_POST['stock_widget_height'],$_POST['font_size'],$_POST['font_family']);
-	if(!is_numeric($new_data[0])){
-		return;
-	}
-	if(!is_numeric($new_data[1])){
-		return;
-	}
-	if(!is_numeric($new_data[2])){
-		return;
-	}
-	$counter=0;
-	foreach($new_data as $data){
-		if($data==""){
-			$new_data[$counter]=$old_data[$counter];
-		}
-		$counter++;
-	}
-	if($new_data[2]>32||$new_data[2]<1){
-		$new_data[2]=14;
-	}
-	update_option('stock_widget_display_size', array($new_data[0],$new_data[1]));
-	update_option('stock_widget_font_options', array($new_data[2],$new_data[3]));
-}
-
-function stock_widget_create_draw_dash_field(){
-	if(get_option('stock_widget_draw_vertical_dash')){
-		$checked="checked";
-	}else{
-		$checked="";
-	}
-	?>
-			<input name="create_vertical_dash" type="checkbox" id="create_vertical_dash_box" <?php echo $checked;?>>
-			<label for="create_vertical_dash>">Vertical Lines</label>	
-			<br>
-	<?php
-
-	if(get_option('stock_widget_draw_horizontal_dash')){
-		$checked="checked";
-	}else{
-		$checked="";
-	}
-	?>
-			<input name="create_horizontal_dash" type="checkbox" id="create_horizontal_dash_box" <?php echo $checked;?>>
-			<label for="create_horizontal_dash">Horizontal Lines</label>	
-	<?php
+function stock_widget_create_text_config(){
+    $font_options   = get_option('stock_widget_font_options');
+    $current_colors = get_option('stock_widget_color_scheme');
+    $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");
+    ?>
+        <label for="input_text_color">Color: </label>
+        <input  id="input_text_color" name="text_color" type="text" value="<?php echo $current_colors[0]; ?>" style="width:70px; text-align:left;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+        
+        <label for="input_font_size">Size: </label>
+        <input  id="input_font_size" name="font_size" type="text" value="<?php echo $font_options[0]; ?>" style="width:29px; text-align:left;"/>
+        
+        <label for="input_font_family">Font-Family: </label>
+        <input  id="input_font_family" name="font_family" list="font_family" value="<?php echo $font_options[1]; ?>" autocomplete="on" style="width:70px; text-align:left;"/>
+        <datalist id="font_family">
+        <?php
+            foreach($default_fonts as $font){
+                echo "<option value='{$font}'></option>";
+            }
+        ?>
+        </datalist>
+    <?php
 }
 
 
-function stock_widget_update_draw_dash_field(){
+function stock_widget_create_default_settings_field() { //this is actually apply template
 
-        update_option('stock_widget_draw_vertical_dash',$_POST['create_vertical_dash']);
-        update_option('stock_widget_draw_horizontal_dash',$_POST['create_horizontal_dash']);
+    $all_settings = get_option('stock_widget_default_settings');
+    ?>  
+        <label for="input_default_settings">Template: </label>
+        <select id="input_default_settings" name="default_settings" style="width:180px;">
+        <option selected> ------- </option>
+        <?php
+            foreach($all_settings as $key=>$setting){
+                echo "<option value='{$key}'>{$setting['name']}</option>";
+            }
+        ?>
+        </select>
+    <?php
 }
 
-function stock_widget_create_default_settings_field(){
+function stock_widget_update_default_settings_field($selected_template) {  //this is actually apply template
 
-	$all_settings=get_option('stock_widget_default_settings');
-	?>
-		<label for="widget_default_settings">Themes: </label>
-		<select name="default_settings" id="widget_default_settings" style="width:180px;">
-		<option selected> ------- </option>
-		<?php 
-			foreach($all_settings as $key=>$setting){
-				echo '<option value="'.$key.'">'.$setting['name'].'</option>';
-			}
-		?>
-		</select>
-	<?php
-}
+    $all_settings      = get_option('stock_widget_default_settings');
+    $selected_template = $all_settings[$selected_template];
 
-function stock_widget_update_default_settings_field(){
-	$selected_setting=$_POST['default_settings'];
-	if($selected_setting=='-------'){
-		return;
-	}
-	$all_settings=get_option('stock_widget_default_settings');
-	$selected_setting=$all_settings[$selected_setting];
+    $option_holder    = get_option('stock_widget_font_options');
+    $option_holder[1] = $selected_template['font_family'];
+    update_option('stock_widget_font_options', $option_holder);
 
-	$option_holder=get_option('stock_widget_font_options');
-	$option_holder[1]=$selected_setting['font_family'];
-	update_option('stock_widget_font_options', $option_holder);
-	$option_holder=get_option('stock_widget_color_scheme');
+    $option_holder    = get_option('stock_widget_color_scheme');  //NOTE: Border is not updated
+    $option_holder[0] = $selected_template['font_color'];
+    $option_holder[2] = $selected_template['back_color1'];
+    $option_holder[3] = $selected_template['back_color2'];
+    update_option('stock_widget_color_scheme', $option_holder);
 
-	$option_holder[0]=$selected_setting['font_color'];
-	$option_holder[2]=$selected_setting['back_color1'];
-	$option_holder[3]=$selected_setting['back_color2'];
-	update_option('stock_widget_color_scheme',$option_holder);
-
-	update_option('stock_widget_draw_vertical_dash',$selected_setting['verti_lines']);
-
-	update_option('stock_widget_draw_horizontal_dash', $selected_setting['hori_lines']);
-
-	update_option('stock_widget_change_style', $selected_setting['check_box']);
+    update_option('stock_widget_draw_vertical_dash',   $selected_template['verti_lines']);
+    update_option('stock_widget_draw_horizontal_dash', $selected_template['hori_lines']);
+    update_option('stock_widget_change_style',         $selected_template['check_box']);
 
 }
 
-function stock_widget_create_style_field(){
-	echo '
-		<p>
-			If you have additional CSS rules you want to apply to the
-			entire widget (such as alignment or borders) you can add them below.
-		</p>
-		<p>
-			Example: <code>margin:auto; border:1px solid #000000;</code>
-		</p>';
-	$previous_setting=get_option('stock_widget_advanced_style');
-	echo 
-	'<input style="width:90%; font-size:14px" type="text" 
-	name="widget_advanced_style" id="widget_advanced_style" value="'.$previous_setting.'"/>';
-
-}
-function stock_widget_update_style_field(){
-	update_option('stock_widget_advanced_style',$_POST['widget_advanced_style']);
+function stock_widget_create_style_field() {
+    $previous_setting = get_option('stock_widget_advanced_style');
+    echo "
+        <p>
+            If you have additional CSS rules you want to apply to the
+            entire widget (such as alignment or borders) you can add them below.
+        </p>
+        <p>
+            Example: <code>margin:auto; border:1px solid #000000;</code>
+        </p>
+        <input id='input_widget_advanced_style' name='widget_advanced_style' type='text' value='{$previous_setting}' style='width:90%; font-size:14px;' />";
 }
 
-
-function stock_widget_create_url_field(){
-	echo '
-		<p>
-			Write the url location of where you want your stocks to link to. Use *stock* to indicate
-			the portion of the URL that requires a stock symbol.
-		</p>
-		<p>
-			Example: https://www.google.com/finance?q=*stock*
-		</p>';
-	$previous_setting=get_option('stock_page_url');
-	$old_setting='';
-	if($previous_setting==false || $previous_setting==''){
-		$old_setting='';
-	}else{
-		$old_setting=$previous_setting[0].'*stock*'.$previous_setting[1];
-	}
-	echo 
-	'<input style="width:90%; font-size:14px" type="text" 
-	name="stock_page_url" id="stock_page_url" value="'.$old_setting.'"/>';
-
+function stock_widget_create_url_field() {
+    $current_url = get_option('stock_page_url');
+    echo "<p>Url that clicking on a stock will link to.  __STOCK__ will be replaced with the stock symbol.</p>
+          <p>Example/Default: https://www.google.com/finance?q=__STOCK__</p>
+          <input id='stock_page_url' name='stock_page_url' type='text' value='{$current_url}' style='width:90%; font-size:14px;' />";
 }
 
-function stock_widget_update_url_field(){
-	$input=$_POST['stock_page_url'];
-	$exploded_input=explode("*stock*", $input);
-	if(empty($exploded_input[0])){
-		update_option('stock_page_url', '');
-	}else{
-		update_option('stock_page_url', array($exploded_input[0],$exploded_input[1]));
-	}
-	
 
+
+/*  Unused
+//Generates the html for the listbox of markets
+function stock_widget_create_market_list(){
+    ?>
+        Default Market:
+            <select name="markets">
+                <?php
+                $default_mark=get_option('stock_widget_default_market');
+                echo '<option selected>'.$default_mark;
+                $markets=get_option('stock_widget_all_markets');
+                if(!empty($markets)){
+                    foreach($markets as $market){
+                        if($default_mark!=$market){
+                        echo "<option >".$market;
+    }
+                    }
+                }   
+                ?>
+    
+            </select>
+
+    <?php
 }
+function stock_widget_update_market_list(){
 
+        $market = $_POST['markets'];
+        update_option('stock_widget_default_market', $market);
+}
+*/
 
 ?>
