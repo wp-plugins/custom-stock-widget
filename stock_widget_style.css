@@ -1,32 +1,49 @@
-.stock_table{
-	position:relative;
-	margin:0px;
-	padding:0px;
-
+.stock_table {
+    margin:  0px;
+    padding: 0px;
+    border-radius: 4px;
+    overflow: hidden;
 }
 
-.stock_table_row{
-	position: absolute;
+.stock_widget_element {
+    text-align: center;
+    height: 100%;
+    float:  left;
 }
 
-.stock_table_element{
-	text-align:center;
-	position:absolute;
-	display:inline-block;
-	height: 100%;
+.stock_widget_vertical_line {
+    background-color: #D7D7D7;
+    margin-left: -2px;
+    opacity: 0.4;
+    width:   2px;
+    float:   left;
 }
 
-.widget_verti_dash{
-	position:absolute;
-	background-color:#D7D7D7;
-	opacity:0.25;
-	width:1px;
+.widget_horizontal_dash {
+    background-color: #D7D7D7;
+    opacity: 0.6;
+    height:  2px;
+    z-index: 5;
 }
-
-.widget_horizontal_dash{
-	position:absolute;
-	background-color:#D7D7D7;
-	opacity:0.6;
-	left:10px;
-	height:1px;
+.stock_table .stock_widget_element.red {
+   color: red;
+}
+.stock_table .stock_widget_element.green {
+   color: green;
+}
+.stock_table .stock_widget_element .box {
+   border:           2px solid #7A7A7A;
+   border-radius:    4px;
+   background-color: gray;
+}
+.stock_table .stock_widget_element .box.red {
+   border:           2px solid #990000;
+   background-color: red;
+}
+.stock_table .stock_widget_element .box.green {
+   border:           2px solid #006800;
+   background-color: green;
+}
+.stock_table .stock_widget_vertical_line:last-child {
+   display: none;
 }

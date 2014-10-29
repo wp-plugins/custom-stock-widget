@@ -54,11 +54,8 @@ function stock_widget_activate() {
     add_option('stock_widget_data_display',             array(0,1,1,1,1,0)); //NOTE: Hardcoded flags for which stock elements to display in a stock entry
     //add_option('stock_widget_display_option_strings',  array("Market", "Symbol", "Last Value", "Change Value", "Change Percentage", "Last Trade"));  //In Future may allow user config
 
-    add_option('stock_widget_max_display',             5);  //controls the maximum number of stocks displayed
-//controls the stocks that are displayed if more are chosen than the maximum. Options are 'first' and 'random'
-
-    add_option('stock_widget_display_type',            "First");
-    //add_option('stock_widget_all_display_types',       array("First", "Random"));   //All of the display types
+    add_option('stock_widget_max_display',             5);        //controls the maximum number of stocks displayed
+    add_option('stock_widget_display_type',            "Preset"); //controls the order in which the stocks are displayed
 
     //TODO: border color is not used anywhere, add it!
     add_option('stock_widget_color_scheme',            array("#5DFC0A", "#5DFC0A", "#000000", "#7F7F7F")); //[Text, Border, Background1, Background2]
@@ -164,11 +161,9 @@ function stock_widget_reset_options() {
     update_option('stock_widget_data_display',            array(0,1,1,1,1,0));
     //update_option('stock_widget_display_option_strings',  array("Market", "Symbol", "Last Value", "Change Value", "Change Percentage", "Last Trade"));  //In Future may allow user config
 
-    update_option('stock_widget_max_display',             5);  //controls the maximum number of stocks displayed
-    //controls the stocks that are displayed if more are chosen than the maximum. Options are 'first' and 'random'
-    update_option('stock_widget_display_type',            "First");
+    update_option('stock_widget_max_display',             5);        //controls the maximum number of stocks displayed
+    update_option('stock_widget_display_type',            "Preset"); //controls the order in which the stocks are displayed
 
-    //update_option('stock_widget_all_display_types',       array("First", "Random"));   //All of the display types
     update_option('stock_widget_color_scheme',            array("#5DFC0A", "#5DFC0A", "#000000", "#7F7F7F")); //[Text, Border, Background1, Background2]
     update_option('stock_widget_display_size',            array(300, 70));     //(width, height)
     update_option('stock_widget_font_options',            array(12, "Times")); //(size, family)
@@ -208,7 +203,7 @@ HEREDOC;
         stock_widget_create_display_options();
 
     echo <<<HEREDOC
-            <div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
+            <div class="postbox-container widget-options" style="display:block; clear:both; width:818px;">
                 <div id="normal-sortables" class="meta-box-sortables ui-sortable">
                     <div id="referrers" class="postbox">
                         <h3 class="hndle"><span>Preview</span></h3>
@@ -217,22 +212,22 @@ HEREDOC;
 HEREDOC;
     echo do_shortcode('[stock-widget]');
     //TODO: Add ID and in page style to remove inline styles
-    $example_id_01 = "[stock-widget display='4' id='example_id_01' width='300' height='100' background_color1='#336633' background_color2='#663333' text_color='#ffff00' change_style='Parentheses']";
+    $example = "[stock-widget id='example' display='2' width='250' height='90' bgcolor1='#363' bgcolor2='#633' text_color='#ff0' change_style='Parentheses']";
     echo <<<HEREDOC
                            <p>To preview your latest changes to settings, you must first save changes.</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="postbox-container widget-options" style="display:block; clear:both; width:750px;">
+            <div class="postbox-container widget-options" style="display:block; clear:both; width:818px;">
                 <div id="normal-sortables" class="meta-box-sortables ui-sortable">
                     <div id="referrers" class="postbox">
                         <h3 class="hndle"><span>Advanced</span></h3>
                         <div class="inside">
                             <p>If you want to run a custom style, you can specify the style parameters in the shortcode. See the example below:</p>
-                                <input type="text" onclick="this.select();" readonly="readonly" value="{$example_id_01}" class="shortcode-in-list-table wp-ui-text-highlight code" style="width: 100%; font-size: smaller;"></p>
+                                <textarea onclick="this.select();" readonly="readonly" class="shortcode-in-list-table wp-ui-text-highlight code" style="width: 100%; font-size: smaller;">{$example}</textarea></p>
 HEREDOC;
-        echo do_shortcode($example_id_01);
+        echo do_shortcode($example);
     echo <<<HEREDOC
                         </div>
                     </div>
@@ -377,7 +372,7 @@ function stock_widget_update_options() {
         $tmp4 = stock_plugin_validate_color($_POST['background_color2'], $current_colors[3]);
         update_option('stock_widget_color_scheme', array($tmp1, $current_colors[1], $tmp3, $tmp4));
         
-        update_option('stock_page_url',              $_POST['stock_page_url']); //TODO: use preg_replace when writing to page
+        update_option('stock_page_url',              $_POST['stock_page_url']);
         update_option('stock_widget_advanced_style', $_POST['widget_advanced_style']); //no validation needed
     }
 }
@@ -427,7 +422,7 @@ HEREDOC;
 
 
 function stock_widget_create_display_type_field() {
-    $all_types    = array("First", "Random");  //TODO: rename "first" to mean something that makes sense
+    $all_types    = array("Preset", "A-Z", "Z-A", "Random");
     $current_type = get_option('stock_widget_display_type');
     ?>
         <label for="input_display_type">Order: </label>

@@ -56,9 +56,8 @@ function stock_plugin_get_data($stock_list) {
             $stock_list_string = str_replace(' ', '', $stock_list_string);
             $url = "http://websking.com/ticker?cmd=get&ticker={$stock_list_string}&type=stock&api=v2";
             $response_list = stock_plugin_url_get_json($url);
+            
             //if the cache is locked, start the loop again after half a second.
-            
-            
             $tmp = $response_list['_cache_status'];
             if ($tmp == "Cache Locked" || $tmp == "Feed Error" || $tmp == "All Failed") {
                 sleep(.5);

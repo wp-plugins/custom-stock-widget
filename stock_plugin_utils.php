@@ -10,8 +10,6 @@ function stock_plugin_validate_integer($new_val, $min_val, $max_val, $default) {
    return min(max((integer)$new_val, $min_val), $max_val);
 }
 
-
-
 function stock_plugin_validate_font_family($new_val, $default) {
    // FOR FUTURE: add in valid font settings: arial, times, etc
    if (empty($new_val))      { return $default; }
@@ -19,11 +17,10 @@ function stock_plugin_validate_font_family($new_val, $default) {
    return $new_val; 
 }
 
-
-
 //for all color settings
 function stock_plugin_validate_color($new_val, $default) {
    // FOR FUTURE: allow valid color strings (black, yellow etc)
+   //TODO: Add transparent as a valid option
    if (substr($new_val, 0, 1) != '#')      { return $default; }
    if (!ctype_xdigit(substr($new_val, 1))) { return $default; }
    $tmp = strlen($new_val);
@@ -32,16 +29,12 @@ function stock_plugin_validate_color($new_val, $default) {
    return strtoupper($new_val);
 }
 
-
-
 function stock_plugin_validate_opacity($new_val, $default) {
    //expected float value
    if (!is_numeric($new_val)) { return $default; }
 
    return min(max((float)$new_val, 0), 1);
 }
-
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // for the category stock list portion of the admin UI
