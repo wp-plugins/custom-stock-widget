@@ -3,7 +3,6 @@
 define('STOCK_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
 
 //helper function for all min/max integers
-
 function stock_plugin_validate_integer($new_val, $min_val, $max_val, $default) {
    if (!is_numeric($new_val)) { return $default; }
 
@@ -19,14 +18,22 @@ function stock_plugin_validate_font_family($new_val, $default) {
 
 //for all color settings
 function stock_plugin_validate_color($new_val, $default) {
-   // FOR FUTURE: allow valid color strings (black, yellow etc)
-   //TODO: Add transparent as a valid option
-   if (substr($new_val, 0, 1) != '#')      { return $default; }
-   if (!ctype_xdigit(substr($new_val, 1))) { return $default; }
-   $tmp = strlen($new_val);
-   if ($tmp < 4 || $tmp > 7 )              { return $default; } //#ff99bb or #f9b are both valid and mean the same thing
+   $valid_color_strings = explode(' ', 'Transparent Aliceblue Antiquewhite Aqua Aquamarine Azure Beige Bisque Black Blanchedalmond Blue Blueviolet Brown Burlywood Cadetblue Chartreuse Chocolate Coral Cornflowerblue Cornsilk Crimson Cyan Darkblue Darkcyan Darkgoldenrod Darkgray Darkgreen Darkkhaki Darkmagenta Darkolivegreen Darkorange Darkorchid Darkred Darksalmon Darkseagreen Darkslateblue Darkslategray Darkturquoise Darkviolet Deeppink Deepskyblue Dimgray Dodgerblue Firebrick Floralwhite Forestgreen Fuchsia Gainsboro Ghostwhite Gold Goldenrod Gray Green Greenyellow Honeydew Hotpink Indianred Indigo Ivory Khaki Lavender Lavenderblush Lawngreen Lemonchiffon Lightblue Lightcoral Lightcyan Lightgoldenrodyellow Lightgreen Lightgrey Lightpink Lightsalmon Lightseagreen Lightskyblue Lightslategray Lightsteelblue Lightyellow Lime Limegreen Linen Magenta Maroon Mediumauqamarine Mediumblue Mediumorchid Mediumpurple Mediumseagreen Mediumslateblue Mediumspringgreen Mediumturquoise Mediumvioletred Midnightblue Mintcream Mistyrose Moccasin Navajowhite Navy Oldlace Olive Olivedrab Orange Orangered Orchid Palegoldenrod Palegreen Paleturquoise Palevioletred Papayawhip Peachpuff Peru Pink Plum Powderblue Purple Red Rosybrown Royalblue Saddlebrown Salmon Sandybrown Seagreen Seashell Sienna Silver Skyblue Slateblue Slategray Snow Springgreen Steelblue Tan Teal Thistle Tomato Turquoise Violet Wheat White Whitesmoke Yellow YellowGreen');
+   // FOR FUTURE: Add in ability to handle rgb(255,0,0)  and rgba(255,0,0,0.3)  hsl(120,100%,50%)  hsla(120,100%,50%,0.3) ??
+   if (substr($new_val, 0, 1) == '#') { //if its in hex format
+       if (!ctype_xdigit(substr($new_val, 1))) { return $default; }
+       $tmp = strlen($new_val);
+       if ($tmp < 4 || $tmp > 7 )              { return $default; } //#ff99bb or #f9b are both valid and mean the same thing
+       
+       return strtoupper($new_val);
+   }
+    
+    $new_val = ucwords($new_val); //make the first letter uppercase before comparison
+    if (!in_array($new_val, $valid_color_strings)) {
+        return $default;
+    }
 
-   return strtoupper($new_val);
+    return $new_val;
 }
 
 function stock_plugin_validate_opacity($new_val, $default) {
@@ -61,7 +68,10 @@ function stock_plugin_create_per_category_stock_lists($plugin_type) { //plugin_t
     $category_terms = get_terms('category');
     if (count($category_terms)) { //NOTE: this may display without any categories below IF and only if there is only the uncategorized category
         echo "<h4 style='display:inline-block;'>Customize Categories</h4><div id='category_toggle' class='section_toggle'>+</div>
-              <div class='section-options-display'>";
+              <div class='section-options-display'>
+                <p>If a custom stock list for a category is defined below, 
+                Any article/page that belongs to that category will attempt to use the custom stock list for that category instead of the default.
+                An article/page that belongs to multiple categories will merge multiple stock lists together</p>";
         
         foreach ($category_terms as $term) {
             if ($term->slug == 'uncategorized') { continue; }

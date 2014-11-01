@@ -48,8 +48,7 @@ function stock_widget_activate() {
     add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL')); //Important no spaces
     //add_option('stock_widget_default_market',          "DOW");  //unused but maybe in future
     //add_option('stock_widget_all_markets',             array("DOW", "TYO", "LON", "FRA", "SHA"));  //unused but maybe in future
-//data display option: Market, Symbol, Last value, change value, change percentage, last trade
-    //add_option('stock_widget_data_display',            array("market" => 0, "stock_sym" => 1, "last_val" => 1, "change_val" => 1, "change_percent" => 1, "last_trade" => 0)); //TODO: I'd like to redo this
+
                                                         //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
     add_option('stock_widget_data_display',             array(0,1,1,1,1,0)); //NOTE: Hardcoded flags for which stock elements to display in a stock entry
     //add_option('stock_widget_display_option_strings',  array("Market", "Symbol", "Last Value", "Change Value", "Change Percentage", "Last Trade"));  //In Future may allow user config
@@ -57,7 +56,7 @@ function stock_widget_activate() {
     add_option('stock_widget_max_display',             5);        //controls the maximum number of stocks displayed
     add_option('stock_widget_display_type',            "Preset"); //controls the order in which the stocks are displayed
 
-    //TODO: border color is not used anywhere, add it!
+    //NOTE: border color is not used anywhere
     add_option('stock_widget_color_scheme',            array("#5DFC0A", "#5DFC0A", "#000000", "#7F7F7F")); //[Text, Border, Background1, Background2]
     add_option('stock_widget_display_size',            array(300, 70));     //(width, height)
 
@@ -147,7 +146,7 @@ function stock_widget_admin_enqueue($hook) {
 add_action('admin_enqueue_scripts', 'stock_widget_admin_enqueue');
 
 function stock_widget_admin_actions(){
-    add_options_page('StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', 'stock_widget_admin_page'); //TODO: make consistent with stock ticker
+    $hook = add_options_page('StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', 'stock_widget_admin_page'); //wrapper for add_submenu_page specifically into "settings"
     //add_submenu_page( 'options-general.php', $page_title, $menu_title, $capability, $menu_slug, $function ); // do not use __FILE__ for menu_slug
 }
 add_action('admin_menu', 'stock_widget_admin_actions');
@@ -200,7 +199,7 @@ HEREDOC;
     elseif (isset($_POST['reset_options'])) {
         stock_widget_reset_options();
     }
-        stock_widget_create_display_options();
+        stock_widget_create_options_config();
 
     echo <<<HEREDOC
             <div class="postbox-container widget-options" style="display:block; clear:both; width:818px;">
@@ -211,7 +210,6 @@ HEREDOC;
                            <p>Based on the last saved settings, this is what the default <code>[stock-widget]</code> shortcode will generate:</p>
 HEREDOC;
     echo do_shortcode('[stock-widget]');
-    //TODO: Add ID and in page style to remove inline styles
     $example = "[stock-widget id='example' display='2' width='250' height='90' bgcolor1='#363' bgcolor2='#633' text_color='#ff0' change_style='Parentheses']";
     echo <<<HEREDOC
                            <p>To preview your latest changes to settings, you must first save changes.</p>
@@ -238,22 +236,20 @@ HEREDOC;
 }
 
 //Creates the entire options page. Useful for formatting.
-function stock_widget_create_display_options(){
+function stock_widget_create_options_config(){
         echo "<form action='' method='POST'>
              <div class='postbox-container widget-options' style='width: 50%; margin-right: 10px; clear:left;'>
                 <div id='normal-sortables' class='meta-box-sortables ui-sortable'>
                     <div id='referrers' class='postbox'>
                         <h3 class='hndle'>Default Widget Display Settings</h3>
                         <div class='inside'>";
-                            stock_widget_create_default_settings_field();  //this is actually apply template
+                            stock_widget_create_template_field();  //this is actually apply template
         echo "              <p>All options below are <b>optional</b>.<br />All are reset by choosing a style above.</p>
                             <div class='widget-options-subsection'>
                                 <h4>Widget Config</h4> 
                                 <div class='section_toggle'>+</div>
                                 <div class='section-options-display'>";
                                     stock_widget_create_widget_config_section();
-        echo "                      <br />";
-                                    stock_widget_create_background_color_field();
         echo "                  </div>
                             </div>
                             <div class='widget-options-subsection'>
@@ -267,11 +263,8 @@ function stock_widget_create_display_options(){
                                 <h4>Stock Display Config</h4>
                                 <div class='section_toggle'>+</div>
                                 <div class='section-options-display'>";
-                                    stock_widget_create_widget_features();
-       echo "                       <br />";
-                                    stock_widget_create_display_type_field();
-       echo "                       <br />
-                                </div>
+                                    stock_widget_create_display_options();
+       echo "                   </div>
                             </div>
                            <div class='widget-options-subsection'>
                                 <h4>Advanced Styling</h4>
@@ -290,8 +283,8 @@ function stock_widget_create_display_options(){
                 </div>
                     </div><!--end referrers -->
                 </div>
-                <input style='margin-bottom:20px;' type='submit' name='save_changes'  value='Save Changes'      class='button-primary'/>
-                <input style='margin-bottom:20px;' type='submit' name='reset_options' value='Reset to Defaults' class='button-primary'/>
+                <input type='submit' name='save_changes'  value='Save Changes'      class='button-primary' style='margin-bottom:20px;' />
+                <input type='submit' name='reset_options' value='Reset to Defaults' class='button-primary' style='margin-bottom:20px;' />
             </div>
         
             <div class='postbox-container widget-options' style='width: 45%; clear:right;'>
@@ -301,10 +294,6 @@ function stock_widget_create_display_options(){
                             <div class='inside'>
                                 <p>Type in your stocks as a comma-separated list.<br /> 
                                 Example: <code>GOOG,YHOO,AAPL</code>.</p>
-                                <p>
-                                    When a page loads with a widget shortcode, the stocks list for the category(s) of that page is loaded.
-                                    If that category has no stocks associated with it, the default list is loaded.
-                                </p>
                                 <p>For Nasdaq, use <code>^IXIC</code>. For S&amp;P500, use <code>^GSPC</code>. Unfortunately, DOW is currently not available.</p>
                                 <p>Here are some example stocks you can try:<br/>
                                 BAC, CFG, AAPL, YHOO, SIRI, VALE, QQQ, GE, MDR, RAD, BABA, SUNE, FB, BBRY, MSFT, MU, PFE, F, GOOG</p>";
@@ -320,9 +309,9 @@ function stock_widget_create_display_options(){
 function stock_widget_update_options() {
     stock_plugin_update_per_category_stock_lists('widget');
 
-    $apply_template = $_POST['default_settings'];
+    $apply_template = $_POST['template'];
     if($apply_template != '-------') {
-        stock_widget_update_default_settings_field($apply_template); //this is actually apply template
+        stock_widget_apply_template($apply_template); //this is actually apply template
     }
     else { //all of these settings are handled by the template, therefore don't bother updating them if template being applied
 
@@ -367,23 +356,29 @@ function stock_widget_update_options() {
         // VALIDATE COLORS
         $current_colors = get_option('stock_widget_color_scheme');
         $tmp1 = stock_plugin_validate_color($_POST['text_color'],        $current_colors[0]);
-        //$tmp2 = stock_plugin_validate_color($_POST['border_color'],      $current_colors[1]); //TODO: border is currently not used at all
+        //$tmp2 = stock_plugin_validate_color($_POST['border_color'],      $current_colors[1]); //NOTE: border is currently not used at all
         $tmp3 = stock_plugin_validate_color($_POST['background_color1'], $current_colors[2]);
         $tmp4 = stock_plugin_validate_color($_POST['background_color2'], $current_colors[3]);
         update_option('stock_widget_color_scheme', array($tmp1, $current_colors[1], $tmp3, $tmp4));
         
-        update_option('stock_page_url',              $_POST['stock_page_url']);
-        update_option('stock_widget_advanced_style', $_POST['widget_advanced_style']); //no validation needed
+        update_option('stock_page_url',              $_POST['stock_page_url']);  //FOR FUTURE: URL validation relative or absolute url
+        
+        $tmp = trim($_POST['widget_advanced_style']); //strip spaces
+        if (substr($tmp, -1) != ';') { $tmp .= ';'; } //poormans making of a css rule
+        update_option('stock_widget_advanced_style', $tmp);
     }
 }
 
-//Generates the html for the list of configurable options ( example: vertical lines & change value )
-function stock_widget_create_widget_features() {
+
+
+function stock_widget_create_display_options() {
+    $all_types       = array('Preset', 'A-Z', 'Z-A', 'Random');
+    $current_type    = get_option('stock_widget_display_type');
     $display_options = get_option('stock_widget_data_display');  //this contains stock symbol attributes
-    
     //NOTE: options 0 and 1 are "market" and the "stock symbol" itself
     //      option 5 is the "last trade"
-?>
+    ?>
+    
     <label for='input_last_value'>Last Value</label>
     <input  id='input_last_value'     name='last_value'     type='checkbox' <?php echo ($display_options[2] == 1 ? 'checked' : '')?>>
     <br />
@@ -399,32 +394,8 @@ function stock_widget_create_widget_features() {
     <label for='input_horizontal_dash'>Horizontal Dash</label>
     <input  id='input_horizontal_dash'name='horizontal_dash'type='checkbox' <?php echo (get_option('stock_widget_draw_horizontal_dash') ? 'checked' : '')?>>
     <br />
-       
-    <?php
-}
-
-//TODO: Just merge all these stupid functions, they don't serve any purpose other than to confuse people and make extra function calls  . All sections -> one section
-
-function stock_widget_create_widget_config_section() {
-    $size = get_option('stock_widget_display_size');
-    $max  = get_option('stock_widget_max_display');
-    echo <<< HEREDOC
-        <label for="input_width">Width: </label>
-        <input  id="input_width"  name="width"  type="text" value="{$size[0]}" style="width:60px; font-size:14px" />
-        <label for="input_height">Height: </label>
-        <input  id="input_height" name="height" type="text" value="{$size[1]}" style="width:60px; font-size:14px" />
-        <br />
-        <label for="input_max_display">Maximum number of stocks displayed: </label>
-        <input  id="input_max_display" name="max_display" type="text" value="{$max}" style="width:29px; font-size:14px; text-align:center" />
-HEREDOC;
-}
-
-
-
-function stock_widget_create_display_type_field() {
-    $all_types    = array("Preset", "A-Z", "Z-A", "Random");
-    $current_type = get_option('stock_widget_display_type');
-    ?>
+    <br />
+    
         <label for="input_display_type">Order: </label>
         <select id="input_display_type" name="display_type"  style="width: 70px;">
         <?php 
@@ -447,30 +418,35 @@ function stock_widget_create_display_type_field() {
             }
         ?>
         </select>
+        <br />
     <?php
 }
 
-
-
-function stock_widget_create_background_color_field(){
+function stock_widget_create_widget_config_section() {
+    $size           = get_option('stock_widget_display_size');
+    $max            = get_option('stock_widget_max_display');
     $current_colors = get_option('stock_widget_color_scheme');
-    ?>
-    
-    <label for="input_background_color1">Odd Row Background Color:</label>
-    <input  id="input_background_color1" name="background_color1" type="text" value="<?php echo $current_colors[2]; ?>" style="width:70px;" />
-    <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
-    <br />
-    <label for="input_background_color2">Even Row Background Color:</label>
-    <input  id="input_background_color2" name="background_color2" type="text" value="<?php echo $current_colors[3]; ?>" style="width:70px;" />
-    <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
-<?php
-
+    echo <<< HEREDOC
+        <label for="input_width">Width: </label>
+        <input  id="input_width"  name="width"  type="text" value="{$size[0]}" style="width:60px; font-size:14px" />
+        <label for="input_height">Height: </label>
+        <input  id="input_height" name="height" type="text" value="{$size[1]}" style="width:60px; font-size:14px" />
+        <br />
+        <label for="input_max_display">Maximum number of stocks displayed: </label>
+        <input  id="input_max_display" name="max_display" type="text" value="{$max}" style="width:29px; font-size:14px; text-align:center" />
+        <br />
+        <label for="input_background_color1">Odd Row Background Color:</label>
+        <input  id="input_background_color1" name="background_color1" type="text" value="{$current_colors[2]}" style="width:70px;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+        <br />
+        <label for="input_background_color2">Even Row Background Color:</label>
+        <input  id="input_background_color2" name="background_color2" type="text" value="{$current_colors[3]}" style="width:70px;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+HEREDOC;
 }
 
 
-
-
-function stock_widget_create_text_config(){
+function stock_widget_create_text_config() {
     $font_options   = get_option('stock_widget_font_options');
     $current_colors = get_option('stock_widget_color_scheme');
     $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");
@@ -495,12 +471,12 @@ function stock_widget_create_text_config(){
 }
 
 
-function stock_widget_create_default_settings_field() { //this is actually apply template
+function stock_widget_create_template_field() {
 
     $all_settings = get_option('stock_widget_default_settings');
     ?>  
-        <label for="input_default_settings">Template: </label>
-        <select id="input_default_settings" name="default_settings" style="width:180px;">
+        <label for="input_template">Template: </label>
+        <select id="input_template" name="template" style="width:180px;">
         <option selected> ------- </option>
         <?php
             foreach($all_settings as $key=>$setting){
@@ -511,7 +487,7 @@ function stock_widget_create_default_settings_field() { //this is actually apply
     <?php
 }
 
-function stock_widget_update_default_settings_field($selected_template) {  //this is actually apply template
+function stock_widget_apply_template($selected_template) {
 
     $all_settings      = get_option('stock_widget_default_settings');
     $selected_template = $all_settings[$selected_template];

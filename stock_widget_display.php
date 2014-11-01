@@ -2,13 +2,13 @@
 
 
 function stock_widget_scripts_enqueue($force = false) {
-    if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the ticker config page
+    if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
     wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__));
-    wp_register_script('stock_widget_script', plugins_url('stock_widget_script.js', __FILE__), array( 'jquery' ), false, false);
+    //wp_register_script('stock_widget_script', plugins_url('stock_widget_script.js', __FILE__), array( 'jquery' ), false, false);
 
     wp_enqueue_style ('stock_widget_style');
-    wp_enqueue_script('stock_widget_script');
+    //wp_enqueue_script('stock_widget_script');
 
     if (is_admin()) { return; } //only run this on regular pages
     $feed_tag = ( !array_key_exists('reletime', $_COOKIE)  ? "?ft=customstockwidget" : "");
@@ -45,33 +45,27 @@ function stock_widget($atts) {
     }
     //NOTE: $cat = get_query_var('cat');  DOES NOT WORK!
     
-    $stock_list = array();
-    $default_stock_list = explode(',', $per_category_stock_lists['default']);  //REM: returns a string
-    //TODO: do we want to again strip spaces just in case?
+    $stock_list = array();  //stripping spaces again out of paranoia
+    $default_stock_list = explode(',', str_replace(' ', '', $per_category_stock_lists['default']));  //REM: returns a string
     
     if (empty($category_ids)) {
         $stock_list = $default_stock_list;
-        $cats_used = 'default';
+        $cats_used  = 'default';
     }
     else {
         $cats_used = '';
         foreach ($category_ids as $cat) { //merge multiple stock lists together if post is in multiple categories
             $stocks_arr = (array_key_exists($cat, $per_category_stock_lists) && !empty($per_category_stock_lists[$cat]) ? explode(',', $per_category_stock_lists[$cat]) : array() );
-            //$cats_used .= print_r($stock_list, true) . print_r($stocks_arr, true); //debug
             $stock_list = array_merge($stocks_arr, $stock_list); //REM: take a unique later
         }
         if (empty($stock_list)) {
             $stock_list = $default_stock_list;
-            //$cats_used = 'test '; //debug
         }
-        //$cats_used .= implode(',', $category_ids) . ' count: ' . count($stock_list) . ' default: ' . $per_category_stock_lists['default'] . ' printr ' . print_r($stock_list, true); //debug
         $cats_used .= implode(',', $category_ids);
     }
     
-    //$output .= "<!-- DEBUG:" . print_r($stock_list, true) . "-->"; //debug
     $tmp = stock_plugin_get_data(array_unique($stock_list)); //from stock_plugin_cache.php, expects an array or string | separated
     $stock_data_list = array_values($tmp['valid_stocks']);   //NOTE: its ok to throw away the keys, they aren't used anywhere
-    //$output .= "<!-- DEBUG:" . print_r($stock_data_list, true) . "-->"; //debug
     
     if (empty($stock_data_list)) {
         return "<!-- WARNING: no stock list found for category: {$cats_used} -->";  //don't fail completely silently
@@ -107,7 +101,12 @@ function stock_widget($atts) {
     $bgcolor1       = stock_plugin_validate_color($bgcolor1,   $color_settings[2]); //REM: skipping border color
     $bgcolor2       = stock_plugin_validate_color($bgcolor2,   $color_settings[3]);
     
-    $change_style   = stock_plugin_validate_color($change_style, $stock_widget_vp['change_styles']); //TODO: make custom validation for this get_option('stock_widget_change_style')
+    if ($change_style != null) {
+        $change_style = ucwords($change_style);
+        if (! in_array($change_style, $stock_widget_vp['change_styles']) ) {
+            $change_style = 'None';
+        }
+    }
     
     $num_to_display = stock_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  get_option('stock_widget_max_display'));
     //***********DONE validation*************
@@ -121,32 +120,29 @@ function stock_widget($atts) {
 //Creates the internal style sheet for all of the various elements.
 function stock_widget_create_css_header($id, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display) {
         $font_options    = get_option('stock_widget_font_options');
-        $advanced_style  = get_option('stock_widget_advanced_style'); //TODO: make sure this has a ; at the end
+        $advanced_style  = get_option('stock_widget_advanced_style');
 
         $number_of_elements = array_sum(get_option('stock_widget_data_display'));
-
-        //TODO: Do we want to truncate to whole numbers of pixels? I think we should.
 
         //variables to be used inside the heredoc
         //NOTE: rows are an individual stock with multiple elements
         //NOTE: elements are pieces of a row, EX.  widget_name & price are each elements
-        $element_width  = $width  / $number_of_elements;
-        $row_height = $height / $num_to_display;
+        $element_width = round($width  / $number_of_elements, 0, PHP_ROUND_HALF_DOWN);
+        $row_height    = round($height / $num_to_display,     0, PHP_ROUND_HALF_DOWN);
         
         //section for box outline around changed values (if chosen)
         $change_box_height     = $font_options[0] + 4; //add 4 pixels to the font size
-        $change_box_width      = $element_width * 0.7;
-        $change_box_margin_top = ($row_height / 2) - ($change_box_height / 2 + 2);
-        $change_box_margin_left= $element_width * 0.15 - 2;
+        $change_box_width      = round($element_width * 0.7,                             0, PHP_ROUND_HALF_DOWN);
+        $change_box_margin_top = round(($row_height / 2) - ($change_box_height / 2 + 2), 0, PHP_ROUND_HALF_DOWN);
+        $change_box_margin_left= round($element_width * 0.15 - 2,                        0, PHP_ROUND_HALF_DOWN);
         
         
         $hbar_width       = $width - 20; //NOTE: yeah its hardcoded
         $hbar_side_margin = 10;          //NOTE: for later
         
-        $vbar_height = $row_height * 0.7; //used for the vertical bar only
-        $vbar_top    = ($row_height - $vbar_height) / 2;
+        $vbar_height = round($row_height * 0.7,                0, PHP_ROUND_HALF_DOWN); //used for the vertical bar only
+        $vbar_top    = round(($row_height - $vbar_height) / 2, 0, PHP_ROUND_HALF_DOWN);
         //NOTE: stock_widget_{$id} is actually a class, so we can properly have multiple per page, IDs would have to be globally unique
-        //TODO: could we just set the border radius on the parent .stock_widget_id ? it might work.
         return <<<HEREDOC
 <style type="text/css" scoped>
 .stock_widget_{$id} {
@@ -205,7 +201,7 @@ HEREDOC;
             [revenue] => 67.911B
         )
 */
-function stock_data_order_test($a, $b) { //TODO: Test that this is ascending order
+function stock_data_order_test($a, $b) {
     if ($a['stock_sym'] == $b['stock_sym'] ) return 0;
     
     return ($a['stock_sym'] < $b['stock_sym']) ? -1 : 1;
@@ -244,15 +240,13 @@ function stock_widget_create_table($id, $stock_data_list, $number_of_stocks) {
         $stock_data = $stock_data_list[$idx];
         $output .= stock_widget_create_row($idx, $stock_data);
     }
-    //$output = "<!-- ".print_r($stock_data_list, true)." -->"; //TODO: Debug
     
     return "<div class='stock_table stock_widget_{$id}'>{$output}</div>";
 }
 
-//function stock_widget_create_row($top_position, $background_color, $stock_data, $text_color, $element_width, $element_height, $row_width, $top_or_bottom){
 function stock_widget_create_row($idx, $stock_data) {
-    if(empty($stock_data['last_val'])) {  //TODO: what is this for?
-        return "<!-- some kinda error -->";
+    if(empty($stock_data['last_val'])) {
+        return "<!-- Last Value did not exist, stock error -->";
     }
     $output = "";
     
@@ -278,17 +272,7 @@ function stock_widget_create_row($idx, $stock_data) {
         $link_wrap_2 = "</a>";
     }
     $output .= "<div class='stock_widget_row {$altrow}'><!-- \n -->{$link_wrap_1}";
-
-    /*if(get_option('stock_widget_draw_vertical_dash')){
-        $output.=stock_widget_draw_vertical_dashes($element_height, $row_width);
-
-    }*/ //this is broken as fuck right now
-
-    /*if(get_option('stock_widget_draw_horizontal_dash')){
-        $output.=stock_widget_draw_horizontal_dashes($element_height, $row_width, $top_or_bottom);
-
-    }*/ //this is handled almost entirely with css and 1 if statement now
-    
+   
     //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
     $display_options = get_option('stock_widget_data_display');  //FUTURE? do we want to just pass this in from parent function?
     
@@ -363,26 +347,6 @@ function stock_widget_create_row($idx, $stock_data) {
 
     $output .= "{$link_wrap_2}</div>"; //closes the .stock_widget_row
 
-    return $output;
-}
-
-//TODO: Fix this so it works in the same way as it does with the stock_ticker
-//NOTE: broke as fuck and disabled
-function stock_widget_draw_vertical_dashes($element_height, $row_width){
-
-    $dash_css='height:'.$element_height.'px;';
-    $num_of_dashes=round($row_width/6)-1;
-    $dash_space=$row_width/$num_of_dashes;
-    $dash_left=$dash_space-1;
-    $output='';
-    $output.='<div class="stock_table_vertical_dashes">';
-    for($i=1;$i<$num_of_dashes;$i++){
-        
-        $output.='<div class="widget_verti_dash" style="'.$dash_css.'left:'.$dash_left.'px ;">';
-        $output.='</div>';
-        $dash_left+=$dash_space;
-    }
-    $output.='</div>';
     return $output;
 }
 ?>
