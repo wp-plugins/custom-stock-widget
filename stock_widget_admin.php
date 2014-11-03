@@ -182,7 +182,7 @@ function stock_widget_reset_options() {
 function stock_widget_admin_page(){
 
     echo <<<HEREDOC
-<div id="widget-options-page" style="max-width:850px;">
+<div id="widget-options-page" style="width:850px;">
 
     <h1>Custom Stock Widget</h1>
     <p>The Custom Stock Widget plugin allows you to create and run your own custom stock table widgets.</p>
@@ -202,7 +202,7 @@ HEREDOC;
         stock_widget_create_options_config();
 
     echo <<<HEREDOC
-            <div class="postbox-container widget-options" style="display:block; clear:both; width:818px;">
+            <div class="postbox-container widget-options" style="display:block; clear:both; width:818px; margin-top:20px;">
                 <div id="normal-sortables" class="meta-box-sortables ui-sortable">
                     <div id="referrers" class="postbox">
                         <h3 class="hndle"><span>Preview</span></h3>
@@ -227,10 +227,12 @@ HEREDOC;
 HEREDOC;
         echo do_shortcode($example);
     echo <<<HEREDOC
+                            <p>Note: In order to display stock widgets with different settings on the same page, each <b>must</b> have a unique id assigned in the shortcode.</p>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="clear"></div>
 </div><!-- end options page -->
 HEREDOC;
 }
@@ -283,8 +285,10 @@ function stock_widget_create_options_config(){
                 </div>
                     </div><!--end referrers -->
                 </div>
-                <input type='submit' name='save_changes'  value='Save Changes'      class='button-primary' style='margin-bottom:20px;' />
-                <input type='submit' name='reset_options' value='Reset to Defaults' class='button-primary' style='margin-bottom:20px;' />
+                <input type='submit' name='save_changes'  value='Save Changes'      class='button-primary' />
+                <input type='submit' name='reset_options' value='Reset to Defaults' class='button-primary' /><sup>*</sup>
+                <br />
+                <sup>* NOTE: 'Reset to Defaults' also clears all stock lists.</sup>
             </div>
         
             <div class='postbox-container widget-options' style='width: 45%; clear:right;'>
@@ -307,7 +311,7 @@ function stock_widget_create_options_config(){
 }
 
 function stock_widget_update_options() {
-    stock_plugin_update_per_category_stock_lists('widget');
+    stock_plugin_update_per_category_stock_lists('widget');  //NOTE: This has to be done every time, because templates don't contain any stock lists
 
     $apply_template = $_POST['template'];
     if($apply_template != '-------') {

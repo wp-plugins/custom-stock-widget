@@ -63,15 +63,19 @@ function stock_plugin_create_per_category_stock_lists($plugin_type) { //plugin_t
     // Array('default'=>'blah,blah,blah', '132'=>'foo,bar') etc
     
     stock_plugin_create_category_stock_list('default', $per_category_stock_lists['default']);
-    echo "<br/><span style='font-weight:bold;'>WARNING:</span><br/>If Default is blank, Stock {$plugin_type}s on pages without categories will be disabled.<br/>";
+    if (empty($per_category_stock_lists['default'])) { //only display this if the default stock list is actually empty
+        echo "<br/><span style='font-weight:bold;'>WARNING:</span><br/>If Default is blank, Stock {$plugin_type}s on pages without categories will be disabled.<br/>";
+    }
     
     $category_terms = get_terms('category');
     if (count($category_terms)) { //NOTE: this may display without any categories below IF and only if there is only the uncategorized category
         echo "<h4 style='display:inline-block;'>Customize Categories</h4><div id='category_toggle' class='section_toggle'>+</div>
               <div class='section-options-display'>
-                <p>If a custom stock list for a category is defined below, 
-                Any article/page that belongs to that category will attempt to use the custom stock list for that category instead of the default.
-                An article/page that belongs to multiple categories will merge multiple stock lists together</p>";
+              
+                <p><b>Optional:</b><br />
+                Use this section to display specific stocks for posts/pages in specific categories.<br />
+                If a post belongs to multiple categories, the plugin will merge the stocks specified for those categories.<br />
+                If you leave a field blank, the category will use the default stock list specified above.</p>";
         
         foreach ($category_terms as $term) {
             if ($term->slug == 'uncategorized') { continue; }
@@ -122,7 +126,9 @@ function stock_plugin_update_per_category_stock_lists($plugin_type) { //plugin_t
         //remove any invalid_stocks from the stock_list, then convert back to string for storage
         $per_category_stock_lists[$key] = implode(',', array_diff($stock_list, $invalid_stocks)); //NOTE: we need to do this even if invalid stocks are empty
     }
-    echo "<p style='font-size:14px;font-weight:bold;'>The following stocks were not found:" . implode(', ', $invalid_stocks) . "</p>";
+    if (!empty($invalid_stocks)) {
+        echo "<p style='font-size:14px;font-weight:bold;'>The following stocks were not found (and were automatically removed):<br />" . implode(', ', $invalid_stocks) . "</p>";
+    }
     update_option("stock_{$plugin_type}_per_category_stock_lists", $per_category_stock_lists); //shove the updated option back into database
 }
 

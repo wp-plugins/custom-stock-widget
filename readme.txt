@@ -28,6 +28,11 @@ Features:
 
 This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Matthew Hively, and Boris Kletser.
 
+== Requirements ==
+
+PHP version >= 5.3.0
+Ability to execute wordpress shortcodes in the location you want to place stocks.
+
 == Installation ==
 
 1. Upload the 'custom-stock-widget' folder to the '/wp-content/plugins/' directory
@@ -51,9 +56,9 @@ This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Ma
 == Frequently Asked Questions ==
 
 = Can I get data for any company? =
-The current version of the plugin supports most stocks on NASDAQ and NYSE.
+The current version of the plugin supports almost any stock on NASDAQ or NYSE.
 
-= How do I add stocks to the ticker? =
+= How do I add stocks to the stock table? =
 
 All stocks can be added in the Stock Widget settings page (Settings -> StockWidget). 
 
