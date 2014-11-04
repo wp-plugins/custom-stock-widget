@@ -14,9 +14,11 @@
     font-size: smaller !important;
     text-align:left;
     margin-right:3px;
+    margin-bottom:3px;
+    padding:6px 10px;
 }
-.widget-options select {
-    font-size:smaller;
+#widget-options-page .widget-options select {
+    /*font-size:smaller;*/
     text-align:left;
     width:150px;
 }
@@ -72,7 +74,7 @@ h3.hndle {
     display: inline-block;
     cursor:pointer;
     text-align: center;
-    margin: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 3px;
     width: 12px;
     height: 12px;
     line-height: 12px;

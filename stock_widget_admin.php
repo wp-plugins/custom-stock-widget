@@ -374,6 +374,71 @@ function stock_widget_update_options() {
 }
 
 
+function stock_widget_create_template_field() {
+
+    $all_settings = get_option('stock_widget_default_settings');
+    ?>  
+        <label for="input_template">Template: </label>
+        <select id="input_template" name="template" style="width:250px;">
+        <option selected> ------- </option>
+        <?php
+            foreach($all_settings as $key=>$setting){
+                echo "<option value='{$key}'>{$setting['name']}</option>";
+            }
+        ?>
+        </select>
+    <?php
+}
+
+
+function stock_widget_create_widget_config_section() {
+    $size           = get_option('stock_widget_display_size');
+    $max            = get_option('stock_widget_max_display');
+    $current_colors = get_option('stock_widget_color_scheme');
+    echo <<< HEREDOC
+        <label for="input_width">Width: </label>
+        <input  id="input_width"  name="width"  type="text" value="{$size[0]}" style="width:60px; font-size:14px" />
+        <label for="input_height">Height: </label>
+        <input  id="input_height" name="height" type="text" value="{$size[1]}" style="width:60px; font-size:14px" />
+        <br />
+        <label for="input_max_display">Maximum number of stocks displayed: </label>
+        <input  id="input_max_display" name="max_display" type="text" value="{$max}" style="width:40px; font-size:14px; text-align:center" />
+        <br />
+        <label for="input_background_color1">Odd Row Background Color:</label>
+        <input  id="input_background_color1" name="background_color1" type="text" value="{$current_colors[2]}" style="width:99px;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+        <br />
+        <label for="input_background_color2">Even Row Background Color:</label>
+        <input  id="input_background_color2" name="background_color2" type="text" value="{$current_colors[3]}" style="width:95px;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+HEREDOC;
+}
+
+
+function stock_widget_create_text_config() {
+    $font_options   = get_option('stock_widget_font_options');
+    $current_colors = get_option('stock_widget_color_scheme');
+    $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");
+    ?>
+        <label for="input_text_color">Color: </label>
+        <input  id="input_text_color" name="text_color" type="text" value="<?php echo $current_colors[0]; ?>" style="width:100px; text-align:left;" />
+        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
+        
+        <label for="input_font_size">Size: </label>
+        <input  id="input_font_size" name="font_size" type="text" value="<?php echo $font_options[0]; ?>" style="width:40px; text-align:left;"/>
+        
+        <br />
+        <label for="input_font_family">Font-Family: </label>
+        <input  id="input_font_family" name="font_family" list="font_family" value="<?php echo $font_options[1]; ?>" autocomplete="on" style="width:125px; text-align:left;"/>
+        <datalist id="font_family">
+        <?php
+            foreach($default_fonts as $font){
+                echo "<option value='{$font}'></option>";
+            }
+        ?>
+        </datalist>
+    <?php
+}
 
 function stock_widget_create_display_options() {
     $all_types       = array('Preset', 'A-Z', 'Z-A', 'Random');
@@ -401,7 +466,7 @@ function stock_widget_create_display_options() {
     <br />
     
         <label for="input_display_type">Order: </label>
-        <select id="input_display_type" name="display_type"  style="width: 70px;">
+        <select id="input_display_type" name="display_type"  style="width: 100px;">
         <?php 
             foreach($all_types as $type) {
                 echo "<option " . ($type == $current_type ? "selected" : "") . ">{$type}</option>";
@@ -415,7 +480,7 @@ function stock_widget_create_display_options() {
     $current_style     = get_option('stock_widget_change_style');
     ?>
         <label for="input_change_style">Price Change Style: </label>
-        <select id="input_change_style" name="change_style"  style="width: 100px;">
+        <select id="input_change_style" name="change_style"  style="width: 130px;">
         <?php 
             foreach($all_change_styles as $style) {
                 echo "<option " . ($style == $current_style ? "selected" : "") . ">{$style}</option>";
@@ -426,70 +491,6 @@ function stock_widget_create_display_options() {
     <?php
 }
 
-function stock_widget_create_widget_config_section() {
-    $size           = get_option('stock_widget_display_size');
-    $max            = get_option('stock_widget_max_display');
-    $current_colors = get_option('stock_widget_color_scheme');
-    echo <<< HEREDOC
-        <label for="input_width">Width: </label>
-        <input  id="input_width"  name="width"  type="text" value="{$size[0]}" style="width:60px; font-size:14px" />
-        <label for="input_height">Height: </label>
-        <input  id="input_height" name="height" type="text" value="{$size[1]}" style="width:60px; font-size:14px" />
-        <br />
-        <label for="input_max_display">Maximum number of stocks displayed: </label>
-        <input  id="input_max_display" name="max_display" type="text" value="{$max}" style="width:29px; font-size:14px; text-align:center" />
-        <br />
-        <label for="input_background_color1">Odd Row Background Color:</label>
-        <input  id="input_background_color1" name="background_color1" type="text" value="{$current_colors[2]}" style="width:70px;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
-        <br />
-        <label for="input_background_color2">Even Row Background Color:</label>
-        <input  id="input_background_color2" name="background_color2" type="text" value="{$current_colors[3]}" style="width:70px;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
-HEREDOC;
-}
-
-
-function stock_widget_create_text_config() {
-    $font_options   = get_option('stock_widget_font_options');
-    $current_colors = get_option('stock_widget_color_scheme');
-    $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");
-    ?>
-        <label for="input_text_color">Color: </label>
-        <input  id="input_text_color" name="text_color" type="text" value="<?php echo $current_colors[0]; ?>" style="width:70px; text-align:left;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" style="text-decoration:none">[?]</a></sup>
-        
-        <label for="input_font_size">Size: </label>
-        <input  id="input_font_size" name="font_size" type="text" value="<?php echo $font_options[0]; ?>" style="width:29px; text-align:left;"/>
-        
-        <label for="input_font_family">Font-Family: </label>
-        <input  id="input_font_family" name="font_family" list="font_family" value="<?php echo $font_options[1]; ?>" autocomplete="on" style="width:70px; text-align:left;"/>
-        <datalist id="font_family">
-        <?php
-            foreach($default_fonts as $font){
-                echo "<option value='{$font}'></option>";
-            }
-        ?>
-        </datalist>
-    <?php
-}
-
-
-function stock_widget_create_template_field() {
-
-    $all_settings = get_option('stock_widget_default_settings');
-    ?>  
-        <label for="input_template">Template: </label>
-        <select id="input_template" name="template" style="width:180px;">
-        <option selected> ------- </option>
-        <?php
-            foreach($all_settings as $key=>$setting){
-                echo "<option value='{$key}'>{$setting['name']}</option>";
-            }
-        ?>
-        </select>
-    <?php
-}
 
 function stock_widget_apply_template($selected_template) {
 
