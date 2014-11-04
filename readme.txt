@@ -4,7 +4,7 @@ Donate link: http://svaca.com/
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.0
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,12 +26,12 @@ Features:
  * Preview of custom stock widget after saving on settings page
  * Acceptance of custom stock widgets using shortcode specifications
 
+Requirements:
+
+ * PHP version >= 5.3.0
+ * Ability to execute wordpress shortcodes in the location(s) you want to place stocks. (see installation)
+
 This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Matthew Hively, and Boris Kletser.
-
-== Requirements ==
-
-PHP version >= 5.3.0
-Ability to execute wordpress shortcodes in the location you want to place stocks.
 
 == Installation ==
 
@@ -85,9 +85,9 @@ If you want to display a different set of stocks for specific categories on your
 
 = Can I place two widgets with different formatting on one page? =
 
-Yes. Specify any variations in the shortcode.
+Yes, however if you want to place stock tables with different formatting on a single page, you must give each stock table its own ID in the shortcode.
 
-For example: `[stock-widget display="4" width="300" height="200" background_color1="#133735" background_color2="grey" text_color="yellow"]`
+For example: `[stock-widget id="example_id_01" display="4" width="300" height="200" background_color1="#133735" background_color2="grey" text_color="yellow"]`
 
 
 = The widget is too big! Is there some way to shrink it? =
@@ -133,9 +133,16 @@ Email us at stock-widget AT relevad DOT com or go to the support section of this
 
 == Changelog ==
 
+= 1.1 =
+
+* Code clean up and optimization
+* Numerous minor bug fixes
+
 = 1.0 =
 Plugin released.
 
 == Upgrade Notice ==
 
-= No upgrades yet =
+= 1.0 =
+
+This version fixes numerous bugs reported by our community. Please upgrade for an enhanced experience.

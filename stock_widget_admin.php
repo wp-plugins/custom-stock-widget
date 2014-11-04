@@ -5,7 +5,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.0
+    Version: 1.1
     Author URI: http://relevad.com/
 
 */
@@ -70,7 +70,7 @@ function stock_widget_activate() {
     add_option('stock_widget_change_style',            "Box");
 
     add_option('stock_widget_advanced_style',          "margin: auto;");
-    add_option('stock_page_url',                       "https://www.google.com/finance?q=__stock__");
+    add_option('stock_page_url',                       "https://www.google.com/finance?q=__STOCK__");
 
 //Holds the default settings
     add_option('stock_widget_default_settings', array(
@@ -172,7 +172,7 @@ function stock_widget_reset_options() {
     //update_option('stock_widget_available_change_styles', array("None", "Box", "Parentheses"));
     update_option('stock_widget_advanced_style',          "margin: auto;");
     update_option('stock_widget_change_style',            "Box");
-    update_option('stock_page_url',                       "https://www.google.com/finance?q=__stock__");
+    update_option('stock_page_url',                       "https://www.google.com/finance?q=__STOCK__");
 }
 
 
