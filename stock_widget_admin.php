@@ -395,7 +395,7 @@ function stock_widget_update_options() {
     $minimum_width = $sw_ds_new['font_size'] * 4 * array_sum($new_display_options);  //point font * 4 characters * X elements ~ aproximate
     if ($minimum_width > $sw_ds_new['width']) {
         echo "<div id='sp-warning'><h1>Warning:</h1>";
-        echo "Chosen font size of " . $sw_ds_new['font_size'] . " when used with width of " . $sw_ds_new['width'] . " would cause overlap of text.</div>";
+        echo "Chosen font size of " . $sw_ds_new['font_size'] . " when used with width of " . $sw_ds_new['width'] . " could cause overlap of text.</div>";
     }
     //****** end fix scaling ******* 
     
