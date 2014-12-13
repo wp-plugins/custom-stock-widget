@@ -5,6 +5,13 @@
     overflow: hidden;
 }
 
+.stock_widget_row.stock_header {
+    background-color: silver !important; 
+
+}
+.stock_widget_row.stock_header div {
+    color: black !important;
+}
 .stock_widget_element {
     text-align: center;
     height: 100%;

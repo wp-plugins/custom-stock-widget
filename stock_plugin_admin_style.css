@@ -7,36 +7,77 @@
     height: 30px;
 }
 
-.widget-options td {
+#sp-warning {
+    color: red;
+}
+
+#sp-options-page {
+    width: 850px;
+}
+
+#sp-preview {
+    display:block; 
+    clear:both; 
+    width:818px; 
+    margin-top:20px;
+}
+
+#sp-form-div {
+    width: 50%; 
+    margin-right: 10px; 
+    clear:left;
+}
+
+#sp-cat-stocks-div {
+    width: 45%; 
+    clear: right;
+}
+
+#sp-options-page .color_q {
+    text-decoration: none;
+}
+
+#sp-options-page input.itxt {
+    font-size: 14px;
+    text-align: center;
+    width: 60px; /*default*/
+}
+
+#sp-cat-stocks-div input {
+    font-size: 14px;
+    text-align: left;
+}
+
+.sp-options td {
     vertical-align: top;
 }
-.widget-options input {
+.sp-options input {
     /*font-size: smaller !important;*/
     text-align:left;
     margin-right:3px;
     margin-bottom:3px;
     padding:6px 10px;
 }
-#widget-options-page .widget-options select {
+#sp-options-page .sp-options select {
     /*font-size:smaller;*/
     text-align:left;
     width:150px;
 }
-.widget-options label {
+.sp-options label {
     margin-right:2px;
     white-space: nowrap;
 }
-.widget-options td:first-child {
+.sp-options td:first-child {
     font-weight:bold;
 }
-.widget-options-subsection {
+.sp-options-subsection {
     border: 1px solid #ccccff;
     padding: 1px 0px 1px 2px;
     background-color: #fefefe;
     margin: 0 0 10px;
     font-size: 0.95em;
 }
-.widget-options-subsection h4 {
+.sp-options-subsection h4 {
     margin: 0;
     padding-bottom: 0px;
     display:inline-block;
@@ -45,20 +86,20 @@ h3.hndle {
     margin: 0 10px;
     padding: 2px 0;
 }
-.widget-options table {
+.sp-options table {
     width:100%;
 }
-.widget-options td:nth-child(1) {width:60px;}
-.widget-options td:nth-child(2) {width:5px;}
-.widget-options .admin-stock-choices {
+.sp-options td:nth-child(1) {width:60px;}
+.sp-options td:nth-child(2) {width:5px;}
+.sp-options .admin-stock-choices {
     text-align:left;
     width:100%;
 }
 
-.widget-options-subsection .section-options-display{
+.sp-options-subsection .section-options-display{
     margin-bottom:1px;
 } 
-.widget-options-subsection .section_toggle{
+.sp-options-subsection .section_toggle{
     cursor:pointer;
     text-align: center;
     margin-bottom: 0px;

@@ -5,10 +5,8 @@ function stock_widget_scripts_enqueue($force = false) {
     if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
     wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__));
-    //wp_register_script('stock_widget_script', plugins_url('stock_widget_script.js', __FILE__), array( 'jquery' ), false, false);
 
     wp_enqueue_style ('stock_widget_style');
-    //wp_enqueue_script('stock_widget_script');
 
     if (is_admin()) { return; } //only run this on regular pages
     $feed_tag = ( !array_key_exists('reletime', $_COOKIE)  ? "?ft=customstockwidget" : "");
@@ -34,7 +32,9 @@ function stock_widget($atts) {
     if (!is_admin() && !is_home()) {
         if (is_category()) { 
             $tmp = get_queried_object(); //gets the WP_query object for this page
-            $category_ids[] = $tmp->term_id;
+            if (is_object($tmp)) {
+                $category_ids[] = $tmp->term_id;
+            }
         }
         else {
             $tmp = get_the_category(); //get the list of all category objects for this post
@@ -72,6 +72,7 @@ function stock_widget($atts) {
     }
 
     
+    $sw_ds = get_option('stock_widget_default_settings');
 
     extract( shortcode_atts( array(  //we can use nulls for this, since defaults are part of the validation
         'id'                => '0',
@@ -87,19 +88,16 @@ function stock_widget($atts) {
     ), $atts ) );
     if ($bgcolor1 == null) { $bgcolor1 = $background_color1; } //always use bgcolor# instead of background_color if available
     if ($bgcolor2 == null) { $bgcolor2 = $background_color2; }
-    $size           = get_option('stock_widget_display_size');
-    $color_settings = get_option('stock_widget_color_scheme');
-    $font_options   = get_option('stock_widget_font_options');
     
     //**********validation section***********
     global $stock_widget_vp;
     //NOTE: for validation, if option supplied was invalid, use the "global" setting
-    $width          = stock_plugin_validate_integer($width,  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $size[0]);
-    $height         = stock_plugin_validate_integer($height, $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $size[1]);
+    $width          = stock_plugin_validate_integer($width,  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $sw_ds['width']);
+    $height         = stock_plugin_validate_integer($height, $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $sw_ds['height']);
     
-    $text_color     = stock_plugin_validate_color($text_color, $color_settings[0]);
-    $bgcolor1       = stock_plugin_validate_color($bgcolor1,   $color_settings[2]); //REM: skipping border color
-    $bgcolor2       = stock_plugin_validate_color($bgcolor2,   $color_settings[3]);
+    $text_color     = stock_plugin_validate_color($text_color, $sw_ds['font_color']);
+    $bgcolor1       = stock_plugin_validate_color($bgcolor1,   $sw_ds['bg_color1']);
+    $bgcolor2       = stock_plugin_validate_color($bgcolor2,   $sw_ds['bg_color2']);
     
     if ($change_style != null) {
         $change_style = ucwords($change_style);
@@ -108,21 +106,22 @@ function stock_widget($atts) {
         }
     }
     
-    $num_to_display = stock_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  get_option('stock_widget_max_display'));
+    $num_to_display = stock_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  $sw_ds['display_number']);
     //***********DONE validation*************
     $num_to_display = min(count($stock_data_list), $num_to_display);
+    if ($sw_ds['show_header']) {
+        $num_to_display += 1; //add 1 row for the header
+    }
    
-    $output .= stock_widget_create_css_header($id, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display);
-    $output .=      stock_widget_create_table($id, $stock_data_list, $num_to_display);  //betcha we only need these
+    $output .= stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display);
+    $output .=      stock_widget_create_table($id, $sw_ds, $stock_data_list, $num_to_display);
     return $output;
 }
 
 //Creates the internal style sheet for all of the various elements.
-function stock_widget_create_css_header($id, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display) {
-        $font_options    = get_option('stock_widget_font_options');
-        $advanced_style  = get_option('stock_widget_advanced_style');
+function stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display) {
 
-        $number_of_elements = array_sum(get_option('stock_widget_data_display'));
+        $number_of_elements = array_sum($sw_ds['data_display']);
 
         //variables to be used inside the heredoc
         //NOTE: rows are an individual stock with multiple elements
@@ -131,7 +130,7 @@ function stock_widget_create_css_header($id, $width, $height, $text_color, $bgco
         $row_height    = round($height / $num_to_display,     0, PHP_ROUND_HALF_DOWN);
         
         //section for box outline around changed values (if chosen)
-        $change_box_height     = $font_options[0] + 4; //add 4 pixels to the font size
+        $change_box_height     = $sw_ds['font_size'] + 4; //add 4 pixels to the font size
         $change_box_width      = round($element_width * 0.7,                             0, PHP_ROUND_HALF_DOWN);
         $change_box_margin_top = round(($row_height / 2) - ($change_box_height / 2 + 2), 0, PHP_ROUND_HALF_DOWN);
         $change_box_margin_left= round($element_width * 0.15 - 2,                        0, PHP_ROUND_HALF_DOWN);
@@ -149,7 +148,7 @@ function stock_widget_create_css_header($id, $width, $height, $text_color, $bgco
    width:            {$width}px;
    height:           {$height}px;
    line-height:      {$row_height}px;
-   {$advanced_style}
+   {$sw_ds['advanced_style']}
 }
 .stock_widget_{$id} .stock_widget_row {
    width:    {$width}px;
@@ -163,8 +162,8 @@ function stock_widget_create_css_header($id, $width, $height, $text_color, $bgco
    background-color: {$bgcolor2};
 }
 .stock_widget_{$id} .stock_widget_element {
-   font-size:   {$font_options[0]}px;
-   font-family: {$font_options[1]},serif;
+   font-size:   {$sw_ds['font_size']}px;
+   font-family: {$sw_ds['font_family']},serif;
    width:       {$element_width}px;  
 }
 .stock_widget_{$id} .stock_widget_element .box {
@@ -209,15 +208,14 @@ function stock_data_order_test($a, $b) {
 
 
 //function stock_widget_create_table($id, $stock_data_list, $max_stocks, $width, $height, $text_color, $background_color1, $background_color2) {
-function stock_widget_create_table($id, $stock_data_list, $number_of_stocks) {
+function stock_widget_create_table($id, $sw_ds, $stock_data_list, $number_of_stocks) {
     if ($number_of_stocks == 0) { //some kinda error
         return "<!-- we had no stocks for some reason, stock_data_list empty -->";
     }
     
-    $display_options    = get_option('stock_widget_data_display');
-    $number_of_elements = array_sum($display_options); //for each stock row
+    $number_of_elements = array_sum($sw_ds['data_display']); //for each stock row
 
-    switch(get_option('stock_widget_display_type')) {  //valid options "Preset", "A-Z", "Z-A", "Random"
+    switch($sw_ds['display_order']) {  //valid options "Preset", "A-Z", "Z-A", "Random"
         case 'Preset':
             break; //do nothing take the data in the order we got it in
         case 'A-Z': 
@@ -234,29 +232,40 @@ function stock_widget_create_table($id, $stock_data_list, $number_of_stocks) {
             //echo "Invalid display option.";
             break;  
     }
-
+    
     $output = "";
+    if ($sw_ds['show_header']) {
+        $output .= "<div class='stock_widget_row stock_header'>"; //Feature Improvement: add config for header color
+        $column_headers = array("Mrkt", "Syml", "Lst Val", "+/- Val", "+/- %", "Lst Trd"); //Feature Improvement, handle the header text better with sizing, maybe overflow hidden?
+        while ( list($idx, $v) = each($sw_ds['data_display']) ) {
+            if ($v == 1) {
+                $output .= "<div class='stock_widget_element'>" . $column_headers[$idx] . "</div>";
+            }
+        }
+        $output .= "</div><!-- \n -->";
+    }
+    
     for ($idx = 0; $idx < $number_of_stocks; $idx++) {
         $stock_data = $stock_data_list[$idx];
-        $output .= stock_widget_create_row($idx, $stock_data);
+        $output .= stock_widget_create_row($idx, $stock_data, $sw_ds);
     }
     
     return "<div class='stock_table stock_widget_{$id}'>{$output}</div>";
 }
 
-function stock_widget_create_row($idx, $stock_data) {
+function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     if(empty($stock_data['last_val'])) {
         return "<!-- Last Value did not exist, stock error -->";
     }
     $output = "";
     
     if ($idx != 0) { //special rules for first row
-        if (get_option('stock_widget_draw_horizontal_dash')) {
+        if ($sw_ds['draw_horizontal_lines']) {
             $output .= "<div class='widget_horizontal_dash'></div><!-- \n -->";
         }
     }
     $vertical_line = "";
-    if (get_option('stock_widget_draw_vertical_dash')) {
+    if ($sw_ds['draw_vertical_lines']) {
         $vertical_line = "<div class='stock_widget_vertical_line'></div>";
     }
     $altrow = ($idx % 2 == 1 ? 'altbg' : '');
@@ -265,7 +274,7 @@ function stock_widget_create_row($idx, $stock_data) {
     //this is for the setting "box" color changing
     $link_wrap_1 = "";
     $link_wrap_2 = "";
-    $link_url = get_option('stock_page_url');
+    $link_url = $sw_ds['stock_page_url'];
     if ($link_url) {
         $link_url = str_replace('__STOCK__', $stock_data['stock_sym'], $link_url);
         $link_wrap_1 = "<a href='{$link_url}' target='_blank' rel='external nofollow'>";
@@ -274,7 +283,7 @@ function stock_widget_create_row($idx, $stock_data) {
     $output .= "<div class='stock_widget_row {$altrow}'><!-- \n -->{$link_wrap_1}";
    
     //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
-    $display_options = get_option('stock_widget_data_display');  //FUTURE? do we want to just pass this in from parent function?
+    $display_options = $sw_ds['data_display'];
     
     
     //NOTE: skip market
@@ -306,7 +315,9 @@ function stock_widget_create_row($idx, $stock_data) {
     } else {
         $data_item = "+{$data_item}.00";
     }
-     $widget_change_style = get_option('stock_widget_change_style');
+    
+    //$widget_change_style = get_option('stock_widget_change_style');
+    $widget_change_style = $sw_ds['change_style'];
     if ($widget_change_style == 'Box') {
         $wrapper_1 = "<div class='stock_widget_element'><!-- \n --><div class='box {$changer}'>";
         $wrapper_2 = "</div></div>";

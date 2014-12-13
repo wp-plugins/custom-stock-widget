@@ -50,7 +50,7 @@ function stock_plugin_create_category_stock_list($id, $stocks_string) { //this i
     $name = ($id == 'default') ? 'Default' : get_cat_name($id);
     echo <<<LABEL
         <label for="input_{$id}_stocks">{$name}</label><br/>
-        <input id="input_{$id}_stocks" name="stocks_for_{$id}" type="text" value="{$stocks_string}" style="width:100%; font-size:14px" />
+        <input id="input_{$id}_stocks" name="stocks_for_{$id}" type="text" value="{$stocks_string}" style="width:100%;"/>
         
 LABEL;
 }

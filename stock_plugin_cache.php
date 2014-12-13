@@ -4,6 +4,56 @@ define('STOCK_PLUGIN_CACHE', true, false); //flag for whether this file was alre
 //NOTE: using the common files between the 2 plugins can lead to errors refrencing whichever plugin was initialized first
 //Notice: Undefined index: XXXXXXX in /home/rele17lemurs/fashion.17lemurs.com/wp-content/plugins/custom-stock-ticker/stock_plugin_cache.php
 
+
+//NOTE: based on comments from here: http://php.net/manual/en/function.str-getcsv.php
+
+if (!function_exists('str_getcsv')) { //Added for compatability with php versions less than 5.3
+    function str_getcsv($input, $delimiter = ',', $enclosure = '"', $escape = '\\') { 
+        if (is_string($input) && !empty($input)) { 
+            $output = array(); 
+            if (preg_match("/{$escape}{$enclosure}/", $line)) { 
+                while ($strlen = strlen($line)) {
+                    $pos_delimiter       = strpos($line, $delimiter); 
+                    $pos_enclosure_start = strpos($line, $enclosure);
+                    
+                    //when the next enclosure is before the next delimiter, means this next substr will be in an enclosure
+                    if ( is_int($pos_delimiter) && is_int($pos_enclosure_start) && ($pos_enclosure_start < $pos_delimiter) ) { 
+                                                
+                        $pos_enclosure_end = strpos($line, $enclosure, 1); //find the second occurrance of the enclosure char, and take the char before that as end of substr
+                        $output[]          = substr($line, 1, $pos_enclosure_end - 1); //take substring between the enclosure characters
+                        $offset            = $pos_enclosure_end + 3; //NOTE: this assumes delimiter and enclosure are 1 char each
+                    } 
+                    else { //next is not in an enclosure
+                        if (empty($pos_delimiter) && empty($pos_enclosure_start)) { //if we found no delimiters and no enclosures
+                            $output[] = $line;
+                            $offset   = strlen($line); 
+                        } 
+                        //NOTE: if no delimiters but there is an enclosure, we grab the enclosure chars too
+                        else { 
+                            $output[] = substr($line, 0, $pos_delimiter); //this assumes pos_delimiter exists but pos_enclosure does not
+                            $offset = ( !empty($pos_enclosure_start) && ($pos_enclosure_start < $pos_delimiter) )  ? $pos_enclosure_start : $pos_delimiter + 1; 
+                        } 
+                    } 
+                    $line = substr($line, $offset); //cut off the first part of the line and continue
+                }
+            } 
+            else { 
+                $line = preg_split("/{$delimiter}/", $line); 
+                //Validating against pesky extra line breaks creating false rows. 
+                if (is_array($line) && !empty($line[0])) { 
+                    $output = $line; 
+                }  
+            } 
+            return $output; 
+        } 
+        else { 
+            return false; 
+        } 
+    } //end function def
+} //end function exists
+
+
+
 //The cache returns a string of the data elements separated by commas. This funciton
 //Splits the string by the commas, removes any single quote marks('), and returns
 //an array of the elements with the appropriate keys. 
