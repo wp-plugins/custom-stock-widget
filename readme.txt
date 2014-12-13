@@ -3,7 +3,7 @@ Contributors: Relevad
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.0
-Stable tag: 1.1
+Stable tag: 1.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,11 +23,10 @@ Features:
  * CSS input for entire widget (allows for alignment, borders, margins, padding, etc.)
  * Custom stocks for specific categories
  * Preview of custom stock widget after saving on settings page
- * Acceptance of custom stock widgets using shortcode specifications
 
 Requirements:
 
- * PHP version >= 5.3.0
+ * PHP version >= 5.3.0 (experimental support for lower versions)
  * Ability to execute wordpress shortcodes in the location(s) you want to place stocks. (see installation)
 
 This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Matthew Hively, and Boris Kletser.
@@ -84,30 +83,15 @@ If you want to display a different set of stocks for specific categories on your
 
 = Can I place two widgets with different formatting on one page? =
 
+----Depricated support-----
 Yes, however if you want to place stock tables with different formatting on a single page, you must give each stock table its own ID in the shortcode.
 
 For example: `[stock-widget id="example_id_01" display="4" width="300" height="200" background_color1="#133735" background_color2="grey" text_color="yellow"]`
 
 
 = The widget is too big! Is there some way to shrink it? =
-Yes. Put in a smaller number in the width/height in Stock Widget Settings (Settings->StockWidget). Both are in pixels. Alternatively, you can enter a smaller width in the shortcode. 
+Yes. Put in a smaller number in the width/height in Stock Widget Settings (Settings->StockWidget). Both are in pixels. 
 
-For example: `[stock-widget width="280"]`
-
-
-= Where can I find all the options for customizing a shortcode outside of the input box UI?
-
-All shortcode options are in the Advanced example:
-`[stock-widget display="4" width="300" height="200" background_color1="#133735" background_color2="grey" text_color="yellow"]`
-
-The options are:
-
-* display (number of stocks per screen)
-* width (pixels)
-* height (pixels)
-* background_color1 (hex)
-* background_color2 (hex)
-* text_color (hex)
 
 
 = Something's not working or I found a bug. What do I do? =
@@ -132,6 +116,16 @@ Email us at stock-widget AT relevad DOT com or go to the support section of this
 
 == Changelog ==
 
+= 1.3 = 
+
+* Increased stocks in widget up to 100 per widget
+* Added toggleable header fields for widgets
+* Added alternative csv parser for php < 5.3
+* Depricated shortcode parameters
+* Added warnings if text sizes + width would lead to overlap
+* Cleaned up data storage for plugin options
+* Misc minor code cleanups
+
 = 1.1 =
 
 * Code clean up and optimization
@@ -142,6 +136,6 @@ Plugin released.
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 1.1 =
 
-This version fixes numerous bugs reported by our community. Please upgrade for an enhanced experience.
+Upgrade to get the latest fixes and feature improvements
