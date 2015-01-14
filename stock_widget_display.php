@@ -92,12 +92,12 @@ function stock_widget($atts) {
     //**********validation section***********
     global $stock_widget_vp;
     //NOTE: for validation, if option supplied was invalid, use the "global" setting
-    $width          = stock_plugin_validate_integer($width,  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $sw_ds['width']);
-    $height         = stock_plugin_validate_integer($height, $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $sw_ds['height']);
+    $width          = relevad_plugin_validate_integer($width,  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $sw_ds['width']);
+    $height         = relevad_plugin_validate_integer($height, $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $sw_ds['height']);
     
-    $text_color     = stock_plugin_validate_color($text_color, $sw_ds['font_color']);
-    $bgcolor1       = stock_plugin_validate_color($bgcolor1,   $sw_ds['bg_color1']);
-    $bgcolor2       = stock_plugin_validate_color($bgcolor2,   $sw_ds['bg_color2']);
+    $text_color     = relevad_plugin_validate_color($text_color, $sw_ds['font_color']);
+    $bgcolor1       = relevad_plugin_validate_color($bgcolor1,   $sw_ds['bg_color1']);
+    $bgcolor2       = relevad_plugin_validate_color($bgcolor2,   $sw_ds['bg_color2']);
     
     if ($change_style != null) {
         $change_style = ucwords($change_style);
@@ -106,7 +106,7 @@ function stock_widget($atts) {
         }
     }
     
-    $num_to_display = stock_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  $sw_ds['display_number']);
+    $num_to_display = relevad_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  $sw_ds['display_number']);
     //***********DONE validation*************
     $num_to_display = min(count($stock_data_list), $num_to_display);
     if ($sw_ds['show_header']) {

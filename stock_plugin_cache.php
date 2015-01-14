@@ -62,7 +62,7 @@ function stock_plugin_proccess_data($data_string) {
         'stock_sym','stock_name','last_val','change_val','change_percent',
         'market_cap','fifty_week_range','pe_ratio','earning_per_share','revenue'
         );
-    $data      = str_getcsv($data_string, ",", "'");
+    $data      = str_getcsv($data_string, ",", "'"); //TODO: there may be an error case here from wordpress.org error reporting
     $data_list = array_combine($key_list, $data);
     return $data_list;
 }
@@ -75,8 +75,11 @@ function stock_plugin_url_get_json($Url) {
     curl_setopt($ch, CURLOPT_URL, $Url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TRANSFERTEXT, false);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1); //setting some timeouts to make sure any problems here don't hang the client.
+    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
     $output = curl_exec($ch);
     curl_close($ch);
+    if ($output === FALSE) $output = '{"_cache_status":"curl failed"}'; //probably timeout
     return json_decode($output, true); //2nd parameter is to return this as an assoc array instead of a stdObject
 }
 
@@ -109,7 +112,7 @@ function stock_plugin_get_data($stock_list) {
             
             //if the cache is locked, start the loop again after half a second.
             $tmp = $response_list['_cache_status'];
-            if ($tmp == "Cache Locked" || $tmp == "Feed Error" || $tmp == "All Failed") {
+            if ($tmp == "Cache Locked" || $tmp == "Feed Error" || $tmp == "All Failed" || $tmp == "curl failed") {
                 sleep(.5);
                 continue;
             }
