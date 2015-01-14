@@ -2,7 +2,7 @@
 Contributors: Relevad
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
-Tested up to: 4.0
+Tested up to: 4.1
 Stable tag: 1.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -37,7 +37,7 @@ This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Ma
 
 1. Activate the Custom Stock Widget plugin through the Plugins menu in WordPress
 
-1. Set Look and Stocks in Settings->StockWidget
+1. Configure appearance and Stocks symbols in "Relevad Plugins"->StockWidget
 
 1. Place Shortcodes
  * Pages / Posts: 
