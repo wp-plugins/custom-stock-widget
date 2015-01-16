@@ -1,3 +1,7 @@
+#sp-options-page h1 {
+    display: inline-block;
+}
+
 .textarea-code {
     padding: 2px 5px;
     border: 1px solid #ccc;

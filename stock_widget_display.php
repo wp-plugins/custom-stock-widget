@@ -2,9 +2,10 @@
 
 
 function stock_widget_scripts_enqueue($force = false) {
+    global $sw_current_version;
     if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
-    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__));
+    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $sw_current_version);
 
     wp_enqueue_style ('stock_widget_style');
 

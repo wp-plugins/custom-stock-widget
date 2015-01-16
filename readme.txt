@@ -3,7 +3,7 @@ Contributors: Relevad
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.1
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,10 @@ Email us at stock-widget AT relevad DOT com or go to the support section of this
 
 
 == Changelog ==
+
+= 1.3.2 =
+
+* Added plugin database revision support
 
 = 1.3.1 =
 
