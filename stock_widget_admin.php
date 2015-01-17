@@ -5,7 +5,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.3.2
+    Version: 1.3.3
     Author URI: http://relevad.com/
 
 */
@@ -42,7 +42,7 @@ if (!defined('STOCK_PLUGIN_CACHE') ) {
 
     include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php';
 
-$sw_current_version = '1.3.2';
+$sw_current_version = '1.3.3';
 $stock_widget_vp = array( //validation_parameters
 'max_display'  => array(1,100),
 'width'        => array(100,500),
@@ -83,7 +83,6 @@ register_activation_hook( __FILE__, 'stock_widget_activate' );
 
 //*********cleanup and conversion functions for updating versions *********
 $sw_db_version = get_option('stock_widget_version', '0');
-$sw_version_error = false;
 
 //NOTE: Don't forget to add each and every version number as a case
 switch($sw_db_version) {
@@ -100,18 +99,18 @@ switch($sw_db_version) {
             stock_widget_convert_old_options(); 
         }
 
-        update_option('stock_widget_version', $sw_current_version); //this will always be right above sw_current_version case
+    case '1.3.2':
+        update_option('stock_widget_version',      $sw_current_version); //this will always be right above sw_current_version case
+        update_option('stock_widget_version_text', " updated from v{$sw_db_version} to"); //keep these 2 updates paired
         //NOTE: takes care of add_option() as well
     case $sw_current_version:
         break;
     //NOTE: if for any reason the database entry disapears again we might have a problem updating or performing table modifcations on tables already modified.
     default: //this shouldn't be needed
         //future version? downgrading?
-        $sw_version_error = true;
+        update_option('stock_widget_version_text', " found v{$sw_db_version} current version");
         break;
 }
-
-
 
 function stock_widget_admin_enqueue($hook) {
     global $sw_current_version;
@@ -169,20 +168,11 @@ function stock_widget_reset_options() {
 
 /** Creates the admin page. **/
 function stock_widget_admin_page() {
-    
-    global $sw_db_version;
-    global $sw_version_error;
     global $sw_current_version;
-    $version_txt = "v{$sw_current_version}";
-    if ($sw_version_error) {
-        $version_txt = "found v{$sw_db_version} current version " . $version_txt;
-    }
-    elseif ($sw_db_version != $sw_current_version) {
-        $version_txt = "updated from v{$sw_db_version} to " . $version_txt;
-    }
+    $version_txt = get_option('stock_widget_version_text', '') . " v{$sw_current_version}";
+    update_option('stock_widget_version_text', ''); //clear the option after we display it once
     echo <<<HEREDOC
 <div id="sp-options-page">
-
     <h1>Custom Stock Widget</h1><sub>{$version_txt}</sub>
     <p>The Custom Stock Widget plugin allows you to create and run your own custom stock table widgets.</p>
     <p>Choose your stocks and display settings below.<br />
