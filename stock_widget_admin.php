@@ -448,12 +448,14 @@ function stock_widget_create_widget_config_section($sw_ds) {
         <input  id="input_max_display" name="max_display" type="text" value="{$max}" class="itxt" style="width:40px;" />
         <br />
         <label for="input_background_color1">Odd Row Background Color:</label>
-        <input  id="input_background_color1" name="background_color1" type="text" value="{$bg_color1}" class="itxt" style="width:99px;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <input  id="input_background_color1" name="background_color1" type="text" value="{$bg_color1}" class="itxt color_input" style="width:99px;" />
+        <sup id="background_color_picker_help1"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+		<script>enhanceTypeColor("input_background_color1", "background_color_picker_help1");</script>
         <br />
         <label for="input_background_color2">Even Row Background Color:</label>
-        <input  id="input_background_color2" name="background_color2" type="text" value="{$bg_color2}" class="itxt" style="width:95px;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <input  id="input_background_color2" name="background_color2" type="text" value="{$bg_color2}" class="itxt color_input" style="width:99px;" />
+        <sup id="background_color_picker_help2"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+		<script>enhanceTypeColor("input_background_color2", "background_color_picker_help2");</script>
 HEREDOC;
 }
 
@@ -462,8 +464,9 @@ function stock_widget_create_text_config($sw_ds) {
     $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");  //maybe extract this list into utils
     ?>
         <label for="input_text_color">Color: </label>
-        <input  id="input_text_color" name="text_color" type="text" value="<?php echo $sw_ds['font_color']; ?>" class="itxt" style="width:100px;" />
-        <sup><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <input  id="input_text_color" name="text_color" type="text" value="<?php echo $sw_ds['font_color']; ?>" class="itxt color_input" style="width:100px;" />
+        <sup id="text_color_picker_help"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+		<script>enhanceTypeColor("input_text_color", "text_color_picker_help");</script>
         
         <label for="input_font_size">Size: </label>
         <input  id="input_font_size" name="font_size" type="text" value="<?php echo $sw_ds['font_size']; ?>" class="itxt" style="width:40px;"/>

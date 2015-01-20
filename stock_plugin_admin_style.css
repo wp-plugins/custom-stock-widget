@@ -125,3 +125,7 @@ h3.hndle {
     line-height: 12px;
     border:1px solid black;
 }
+
+input.color_input{
+	padding: 2px;
+}
