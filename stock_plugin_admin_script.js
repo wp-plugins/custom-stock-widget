@@ -1,7 +1,7 @@
 jQuery(document).ready(function() {
     var admin_options_toggle = jQuery('.section_toggle');
     var option_display = jQuery('.section-options-display');
-    option_display.toggle();
+    //option_display.toggle();
 	
 
     var toggle_option = function(target) {
@@ -14,6 +14,7 @@ jQuery(document).ready(function() {
     }
     admin_options_toggle.click(function() {
         toggle_option(jQuery(this));
+	toggleSection(event.target.id);
     });
 });
 
@@ -43,4 +44,29 @@ function enhanceTypeColor(colorId, colorTextId) {
 		document.getElementById(colorId).setAttribute("type", "color");
 		document.getElementById(colorTextId).innerHTML = "";
 	}
+}
+
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+
+function toggleSection(sectionToToggle) {
+    sec = readCookie(sectionToToggle);
+    if (sec) {                //if cookie has a value
+        if (sec == "none") {
+            document.cookie = sectionToToggle + "=block";
+        } else {              
+            document.cookie = sectionToToggle + "=none";
+        }
+    } else {                //if cookie doesn't have a value, set it!
+        document.cookie = sectionToToggle + "=none";
+    }
 }

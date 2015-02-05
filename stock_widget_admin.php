@@ -5,7 +5,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.3.4
+    Version: 1.3.5
     Author URI: http://relevad.com/
 
 */
@@ -42,7 +42,7 @@ if (!defined('STOCK_PLUGIN_CACHE') ) {
 
     include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php';
 
-$sw_current_version = '1.3.4';
+$sw_current_version = '1.3.5';
 $stock_widget_vp = array( //validation_parameters
 'max_display'  => array(1,100),
 'width'        => array(100,500),
@@ -74,7 +74,7 @@ function stock_widget_activate() {
         'show_header'           => false,
         'display_order'         => 'Preset', //from display_type
         'change_style'          => 'Box',    //its how the stock change status is emphasized
-        'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK_'
+        'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK__'
         );
     add_option('stock_widget_default_settings', $stock_widget_default_settings); //one option to rule them all
 
@@ -101,6 +101,7 @@ switch($sw_db_version) {
 
     case '1.3.2':
     case '1.3.3':
+	case '1.3.4':
         update_option('stock_widget_version',      $sw_current_version); //this will always be right above sw_current_version case
         update_option('stock_widget_version_text', " updated from v{$sw_db_version} to"); //keep these 2 updates paired
         //NOTE: takes care of add_option() as well
@@ -161,7 +162,7 @@ function stock_widget_reset_options() {
         'show_header'           => false,
         'display_order'         => 'Preset', //from display_type
         'change_style'          => 'Box',    //its how the stock change status is emphasized
-        'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK_'
+        'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK__'
         );
     update_option('stock_widget_default_settings', $stock_widget_default_settings); //one option to rule them all
 }
@@ -212,6 +213,18 @@ HEREDOC;
 HEREDOC;
 }
 
+
+function stock_widget_cookie_helper($subsection) {
+	echo "<div class='section_toggle' id='swsec[$subsection]'>";
+	if ($_COOKIE['swsec'][$subsection] == "none") {
+		echo "+</div>";
+	} else {
+		echo "-</div>";
+	}
+	echo "<div class='section-options-display' style='display:".$_COOKIE['swsec'][$subsection]."';>";
+          
+}
+
 //Creates the entire options page. Useful for formatting.
 function stock_widget_create_options_config() {
         $sw_ds = get_option('stock_widget_default_settings');
@@ -223,37 +236,32 @@ function stock_widget_create_options_config() {
                         <div class='inside'>";
                             stock_widget_create_template_field();
         echo "              <div class='sp-options-subsection'>
-                                <h4>Widget Config</h4> 
-                                <div class='section_toggle'>+</div>
-                                <div class='section-options-display'>";
-                                    stock_widget_create_widget_config_section($sw_ds);  //FOR FUTURE: add in a color swatch of some sort
+                                <h4>Widget Config</h4>";
+								stock_widget_cookie_helper(0);
+                                    stock_widget_create_widget_config_section($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
-                                <h4>Text Config</h4>
-                                <div class='section_toggle'>+</div>
-                                <div class='section-options-display'>";
+                                <h4>Text Config</h4>";
+								stock_widget_cookie_helper(1);
                                     stock_widget_create_text_config($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
-                                <h4>Stock Display Config</h4>
-                                <div class='section_toggle'>+</div>
-                                <div class='section-options-display'>";
+                                <h4>Stock Display Config</h4>";
+								stock_widget_cookie_helper(2);
                                     stock_widget_create_display_options($sw_ds);
        echo "                   </div>
                             </div>
                            <div class='sp-options-subsection'>
-                                <h4>Advanced Styling</h4>
-                                <div class='section_toggle'>+</div>
-                                <div class='section-options-display'>";
+                                <h4>Advanced Styling</h4>";
+								stock_widget_cookie_helper(3);
                                     stock_widget_create_style_field($sw_ds);
         echo "                  </div>
                             </div>
                            <div class='sp-options-subsection'>
-                                <h4>URL Link</h4>
-                                <div class='section_toggle'>+</div>
-                                <div class='section-options-display'>";
+                                <h4>URL Link</h4>";
+								stock_widget_cookie_helper(4);
                                     stock_widget_create_url_field($sw_ds);
         echo "                  </div>
                     </div>
