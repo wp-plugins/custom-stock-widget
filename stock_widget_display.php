@@ -167,7 +167,7 @@ function stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_colo
    font-family: {$sw_ds['font_family']},serif;
    width:       {$element_width}px;  
 }
-.stock_widget_{$id} .stock_widget_element .box {
+.stock_widget_{$id} .stock_widget_element .sw_box {
    width:       {$change_box_width}px;
    height:      {$change_box_height}px;
    line-height: {$change_box_height}px;
@@ -309,10 +309,10 @@ function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     $data_item = $stock_data['change_val'];
     $data_item = round($data_item, 2);
     if ($data_item > 0) {
-        $changer   = "green";
+        $changer   = "sw_green";
         $data_item = "+{$data_item}";
     } elseif ($data_item < 0) {
-        $changer = "red";
+        $changer = "sw_red";
     } else {
         $data_item = "+{$data_item}.00";
     }
@@ -320,7 +320,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     //$widget_change_style = get_option('stock_widget_change_style');
     $widget_change_style = $sw_ds['change_style'];
     if ($widget_change_style == 'Box') {
-        $wrapper_1 = "<div class='stock_widget_element'><!-- \n --><div class='box {$changer}'>";
+        $wrapper_1 = "<div class='stock_widget_element'><!-- \n --><div class='sw_box {$changer}'>";
         $wrapper_2 = "</div></div>";
     }
     elseif ($widget_change_style == 'Parentheses') {

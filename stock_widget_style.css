@@ -32,22 +32,22 @@
     height:  2px;
     z-index: 5;
 }
-.stock_table .stock_widget_element.red {
+.stock_table .stock_widget_element.sw_red {
    color: red;
 }
-.stock_table .stock_widget_element.green {
+.stock_table .stock_widget_element.sw_green {
    color: green;
 }
-.stock_table .stock_widget_element .box {
+.stock_table .stock_widget_element .sw_box {
    border:           2px solid #7A7A7A;
    border-radius:    4px;
    background-color: gray;
 }
-.stock_table .stock_widget_element .box.red {
+.stock_table .stock_widget_element .box.sw_red {
    border:           2px solid #990000;
    background-color: red;
 }
-.stock_table .stock_widget_element .box.green {
+.stock_table .stock_widget_element .box.sw_green {
    border:           2px solid #006800;
    background-color: green;
 }
