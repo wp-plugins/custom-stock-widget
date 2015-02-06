@@ -5,7 +5,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.3.5a
+    Version: 1.3.5b
     Author URI: http://relevad.com/
 
 */
