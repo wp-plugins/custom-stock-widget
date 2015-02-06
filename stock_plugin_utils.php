@@ -14,6 +14,20 @@ function stock_plugin_create_category_stock_list($id, $stocks_string) { //this i
 LABEL;
 }
 
+function stock_plugin_cookie_helper($subsection, $plugin_type) {
+	//if (!isset ($_COOKIE['{$plugin_type}sec'][$subsection])) setcookie("{$plugin_type}sec[$subsection]", 'none');
+	$the_cookie = (isset ($_COOKIE["{$plugin_type}sec"][$subsection]) ? $_COOKIE["{$plugin_type}sec"][$subsection] : 'none');
+	echo "<div class='section_toggle' id='{$plugin_type}sec[$subsection]'>";
+	if ($the_cookie == "none") {
+		echo "+</div>";
+	} else {
+		echo "-</div>";
+	}
+	echo "<div class='section-options-display' style='display:".$the_cookie."';>";
+}
+
+
+
 //Generates the html input lines for the list of stocks in each category
 function stock_plugin_create_per_category_stock_lists($plugin_type) { //plugin_type = widget/ticker
     
@@ -26,15 +40,15 @@ function stock_plugin_create_per_category_stock_lists($plugin_type) { //plugin_t
         echo "<br/><span style='font-weight:bold;'>WARNING:</span><br/>If Default is blank, Stock {$plugin_type}s on pages without categories will be disabled.<br/>";
     }
     
+		
     $category_terms = get_terms('category');
     if (count($category_terms)) { //NOTE: this may display without any categories below IF and only if there is only the uncategorized category
-        echo "<h4 style='display:inline-block;'>Customize Categories</h4><div id='category_toggle' class='section_toggle'>+</div>
-              <div class='section-options-display'>
-              
-                <p><b>Optional:</b><br />
-                Use this section to display specific stocks for posts/pages in specific categories.<br />
-                If a post belongs to multiple categories, the plugin will merge the stocks specified for those categories.<br />
-                If you leave a field blank, the category will use the default stock list specified above.</p>";
+        echo "<h4 style='display:inline-block;'>Customize Categories</h4>";
+				stock_plugin_cookie_helper(0, $plugin_type);
+					echo "<p><b>Optional:</b><br />
+					Use this section to display specific stocks for posts/pages in specific categories.<br />
+					If a post belongs to multiple categories, the plugin will merge the stocks specified for those categories.<br />
+					If you leave a field blank, the category will use the default stock list specified above.</p>";
         
         foreach ($category_terms as $term) {
             if ($term->slug == 'uncategorized') { continue; }
@@ -118,7 +132,6 @@ function stock_plugin_convert_old_category_stock_list($plugin_type) { //plugin_t
 }
 
 
-
 if ( ! class_exists( 'WP_List_Table' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
@@ -126,103 +139,6 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 //WARNING: WP_List_Table is not intended for use by plugin and theme developers as it is subject to change without warning in any future WordPress release
 // Recommended to make a copy of this class as is and include it with the plugin files.
 
-/*http://wpengineer.com/2426/wp_list_table-a-step-by-step-guide/
-steps left to do for basic table functionality:
-1) Create dummy function to add/reset test data in the database (use more creative names)
-2) Setup pagination
-3) Setup Search functionality
-4) Setup screen options
-4b) hide columns would require using get_column_info()  which may or may not work for me... :(
-
-*/
-class matt_debug_List_Table extends WP_List_Table {
-    /*function __construct($type) {
-        $this->type = $type;
-        parent::__construct(); //will this break it?
-    }*/
-    //TODO: What other options might be useful to display on this page? Stock list? width, height, numstocks ?
-    // could easily provide sorting for these as well. Add these in later I suppose.
-    //Intention: to have a single database field containing all the saved names.
-    //then each individual save would be retrieved from there.
-    //in order to get sorting and such to work, we would need all of the data to be locally here inside $items.
-    //it might be much cleaner to make our own wordpress database table, then when we retreive data we can use order by commands
-    //Advantages, cleaner for sorting data.
-    //Disadvantages, none actually, it will already be anoying to have to iterate through all of the saved entries to update them should we change the scheme later (remove keys) adding new ones is pretty easy though
-    private $example_data = array(// TODO: retreive this data from the DB somehow in roughly this format
-        array('ID' => 1, 'name' => 'widget-1'), //shortcode should be created from the name
-        array('ID' => 2, 'name' => 'widget-2'),
-        array('ID' => 3, 'name' => 'widget-3')
-    );
-    function get_columns() {
-        $columns = array( //NOTE: don't need to declare an ID column ID is reserved and expected
-            'cb'        => '<input type="checkbox" />',
-            'name'      => 'Named ID',
-            'shortcode' => 'Shortcode'
-        );
-        return $columns;
-    }
-    function prepare_items() { //this so far looks a lot simpler
-      $columns = $this->get_columns();
-      $hidden = array();
-      $sortable = $this->get_sortable_columns();
-      $this->_column_headers = array($columns, $hidden, $sortable);
-      usort( $this->example_data, array( &$this, 'usort_reorder' ) );
-      $this->items = $this->example_data;;
-    }
-    
-    //NOTE: Need one function per column name (uses column_default if specific function not found)
-    function column_default( $item, $column_name ) {
-      switch( $column_name ) { 
-        /*case 'booktitle':
-        case 'author':
-        case 'isbn':
-          return $item[ $column_name ];*/
-        default:
-          return print_r( $item, true ) ; //Show the whole array for troubleshooting purposes
-      }
-    }
-    function column_name($item) {
-      $actions = array(
-            'edit'      => sprintf('<a href="?page=%s&action=%s&book=%s">Edit</a>',  $_REQUEST['page'],'edit',  $item['ID']),
-            'delete'    => sprintf('<a href="?page=%s&action=%s&book=%s">Delete</a>',$_REQUEST['page'],'delete',$item['ID']),
-        );
-
-      return sprintf('%1$s %2$s', $item['name'], $this->row_actions($actions) );
-    }
-    function column_cb($item) {
-        return sprintf(
-            '<input type="checkbox" name="shortcode[]" value="%s" />', $item['ID']
-        );    
-    }
-    function column_shortcode($item) {
-        return sprintf('<input type="text" onfocus="this.select();" readonly="readonly" value="[stockwidget id=&quot;%s&quot;]" class="shortcode-in-list-table wp-ui-text-highlight code">', $item['name']);
-        
-    }
-    
-    function get_sortable_columns() {
-      $sortable_columns = array(
-        'name'  => array('name',false)
-      );
-      return $sortable_columns;
-    }
-    function usort_reorder( $a, $b ) {
-      // If no sort, default to title
-      $orderby = ( ! empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : 'name';
-      // If no order, default to asc
-      $order = ( ! empty($_GET['order'] ) ) ? $_GET['order'] : 'asc';
-      // Determine sort order
-      $result = strcmp( $a[$orderby], $b[$orderby] );
-      // Send final sort direction to usort
-      return ( $order === 'asc' ) ? $result : -$result;
-    }
-    function get_bulk_actions() {
-        $actions = array(
-                'delete' => 'Delete'
-        );
-
-        return $actions;
-    }
-}
 
 class stock_shortcode_List_Table extends WP_List_Table {
     private $type;  //TODO: does this make this usable for both widget and ticker?
@@ -238,55 +154,25 @@ class stock_shortcode_List_Table extends WP_List_Table {
             return $columns;
     }
 
-    function __construct($type, $screen) { //type is either widget or ticker
+    function __construct($type) { //type is either widget or ticker
             $this->type = $type;
-            //$this->screen = $screen;
             parent::__construct( array( //TODO: I guess this fires the constructor of the WP_List_Table ?
                     'singular' => 'post',
-                    'plural'   => 'posts',
-                    'ajax'     => false,
-                    'screen'   => $screen ) );  // where is the screen setup? The parent expects to have the screen chosen
-                                                //NOTE: This is different from ctf7
+                    'plural' => 'posts',
+                    'ajax' => false ) );
     }
 
     function prepare_items() { //NOTE: required to be overriden by subclass
             //$current_screen = get_current_screen(); //unused?
-            //print_r($current_screen);
-            //print_r($this->screen);
-            /*
-            echo "<pre>DEBUG:\n";
-            $columns = get_column_headers_debug( $this->screen ); //empty
-            print_r($columns);
-            $hidden = get_hidden_columns( $this->screen );  //empty -- but i think this is correct.
-            print_r($hidden);
-            $sortable_columns = $this->get_sortable_columns(); //id => array (id, 1) //if I had to guess, its say the id column is sortable, and default is ascending
-            print_r($sortable_columns);
-            echo "</pre>";
-            */
             $per_page = $this->get_items_per_page( 'stock_shortcodes_per_page' ); //from the hidden top menu where you can check/uncheck columns and configure how many rows to show
-                                                                                  //NOTE: missing or empty?
 
-            //reference http://codex.wordpress.org/Class_Reference/WP_List_Table#Examples
-            //echo "<pre>DEBUG:\n";
-            //print_r($this->_column_headers); //here results in an error, undefined property
-            //echo "</pre>";
             $this->_column_headers = $this->get_column_info();
-            /*$columns       = get_column_headers( $this->screen );       // THIS FAILS!
-            $columns_debug = get_column_headers_debug( $this->screen ); // THIS succeeds.
-            echo "<pre>DEBUG:\n";
-            echo "columns: ";
-            print_r($columns);
-            echo "columns_debug: ";
-            print_r($columns_debug);
-            //print_r($this->_column_headers);
-            echo "</pre>";*/
 
-            //all of these args are unused by my code, so either I need to use them in some way other than a WP_query, or I should delete them NOTE: need some of them
             $args = array(
                     'posts_per_page' => $per_page,
-                    'orderby'        => 'id',
-                    'order'          => 'ASC',
-                    'offset'         => ( $this->get_pagenum() - 1 ) * $per_page );
+                    'orderby' => 'id',
+                    'order' => 'ASC',
+                    'offset' => ( $this->get_pagenum() - 1 ) * $per_page );
 
             if ( ! empty( $_REQUEST['s'] ) )
                     $args['s'] = $_REQUEST['s'];
@@ -305,24 +191,29 @@ class stock_shortcode_List_Table extends WP_List_Table {
                             $args['order'] = 'ASC';
                     elseif ( 'desc' == strtolower( $_REQUEST['order'] ) )
                             $args['order'] = 'DESC';
-            }         
-            
-            //if $this->items === false then we get the "no items found" message
-            $this->items = get_option("stock_{$this->type}_sc_ids");
-            //$this->items = array('test1','test2','boris');  //so, this test data, does not work
-            //TODO: debugging purposes
+            }
 
+            //$this->items = WPCF7_ContactForm::find( $args ); //TODO:  this just grabs all available shortcodes
+            //global $wpdb;
+            //TODO: think more about putting a list of all current IDs into a field of WP_options, instead of having to perform this wildcard search query.
+            //$result = $wpdb->get_results( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'stock_{$this->type}_sc_%'", OBJECT); //stock_{widget/ticker}_{short_code}_{ID}
+            $this->items = get_option("stock_{$this->type}_sc_ids");
+            /*$tmp = array();
+            foreach ($results as $r) {
+                $tmp[] = str_replace("stock_{$this->type}_sc_", "", $r->option_name);
+            }
+            $this->items = $tmp;*/
             //TODO: does this->items have to be of any particular type? If it has to be of type "post" then we might be screwed
             $total_items = count($this->items);
 
+            //$total_items = WPCF7_ContactForm::count();       //TODO: just do a count on the return from the previous line
+            //$total_items = $wpdb->num_rows;
             $total_pages = ceil( $total_items / $per_page );
 
             $this->set_pagination_args( array(
                     'total_items' => $total_items,
                     'total_pages' => $total_pages,
                     'per_page'    => $per_page ) );
-                    
-            //echo "<span>This is a test if this is working at all. <br/>{$total_items} <br/>{$total_pages} <br/>{$per_page}</span><br/>" . print_r($this->items, true); //TODO: debug
     }
     
     function get_columns() { //NOTE: required to be overriden by subclass

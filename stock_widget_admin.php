@@ -213,18 +213,6 @@ HEREDOC;
 HEREDOC;
 }
 
-
-function stock_widget_cookie_helper($subsection) {
-	echo "<div class='section_toggle' id='swsec[$subsection]'>";
-	if ($_COOKIE['swsec'][$subsection] == "none") {
-		echo "+</div>";
-	} else {
-		echo "-</div>";
-	}
-	echo "<div class='section-options-display' style='display:".$_COOKIE['swsec'][$subsection]."';>";
-          
-}
-
 //Creates the entire options page. Useful for formatting.
 function stock_widget_create_options_config() {
         $sw_ds = get_option('stock_widget_default_settings');
@@ -237,31 +225,31 @@ function stock_widget_create_options_config() {
                             stock_widget_create_template_field();
         echo "              <div class='sp-options-subsection'>
                                 <h4>Widget Config</h4>";
-								stock_widget_cookie_helper(0);
+								stock_plugin_cookie_helper(1, 'widget');
                                     stock_widget_create_widget_config_section($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
                                 <h4>Text Config</h4>";
-								stock_widget_cookie_helper(1);
+								stock_plugin_cookie_helper(2, 'widget');
                                     stock_widget_create_text_config($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
                                 <h4>Stock Display Config</h4>";
-								stock_widget_cookie_helper(2);
+								stock_plugin_cookie_helper(3, 'widget');
                                     stock_widget_create_display_options($sw_ds);
        echo "                   </div>
                             </div>
                            <div class='sp-options-subsection'>
                                 <h4>Advanced Styling</h4>";
-								stock_widget_cookie_helper(3);
+								stock_plugin_cookie_helper(4, 'widget');
                                     stock_widget_create_style_field($sw_ds);
         echo "                  </div>
                             </div>
                            <div class='sp-options-subsection'>
                                 <h4>URL Link</h4>";
-								stock_widget_cookie_helper(4);
+								stock_plugin_cookie_helper(5, 'widget');
                                     stock_widget_create_url_field($sw_ds);
         echo "                  </div>
                     </div>

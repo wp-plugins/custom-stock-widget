@@ -12,9 +12,9 @@ jQuery(document).ready(function() {
         }
         target.next('.section-options-display').toggle(200);
     }
-    admin_options_toggle.click(function() {
+    admin_options_toggle.click(function(event) {
         toggle_option(jQuery(this));
-	toggleSection(event.target.id);
+		toggleSection(event.target.id);
     });
 });
 
@@ -61,12 +61,12 @@ function readCookie(name) {
 function toggleSection(sectionToToggle) {
     sec = readCookie(sectionToToggle);
     if (sec) {                //if cookie has a value
-        if (sec == "none") {
-            document.cookie = sectionToToggle + "=block";
-        } else {              
-            document.cookie = sectionToToggle + "=none";
+        if (sec == "none") {  //if the section is collapsed when clicked
+            document.cookie = sectionToToggle + "=block";  //set the new cookie state to uncollpased
+        } else {              //if the section is not collapsed when clicked
+            document.cookie = sectionToToggle + "=none";   //set the new cookie state to collpased
         }
-    } else {                //if cookie doesn't have a value, set it!
-        document.cookie = sectionToToggle + "=none";
+    } else {                //if cookie doesn't have a value
+        document.cookie = sectionToToggle + "=block";	   //user clicked a section for the first time, it is now uncollapsed
     }
 }
