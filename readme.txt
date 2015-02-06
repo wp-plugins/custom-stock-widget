@@ -27,6 +27,7 @@ Features:
 Requirements:
 
  * PHP version >= 5.3.0 (experimental support for lower versions)
+ * Jquery version 1.6 or higher (wordpress 4.1 ships with 1.11.1)
  * Ability to execute wordpress shortcodes in the location(s) you want to place stocks. (see installation)
 
 This plugin was developed by Relevad Corporation. Authors: Artem Skorokhodov, Matthew Hively, and Boris Kletser.
