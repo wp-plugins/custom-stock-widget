@@ -1,6 +1,6 @@
 <?php
-
-define('STOCK_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
+namespace stockWidget;
+//define('STOCK_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // for the category stock list portion of the admin UI
@@ -15,15 +15,14 @@ LABEL;
 }
 
 function stock_plugin_cookie_helper($subsection, $plugin_type) {
-	//if (!isset ($_COOKIE['{$plugin_type}sec'][$subsection])) setcookie("{$plugin_type}sec[$subsection]", 'none');
-	$the_cookie = (isset ($_COOKIE["{$plugin_type}sec"][$subsection]) ? $_COOKIE["{$plugin_type}sec"][$subsection] : 'none');
-	echo "<div class='section_toggle' id='{$plugin_type}sec[$subsection]'>";
-	if ($the_cookie == "none") {
-		echo "+</div>";
-	} else {
-		echo "-</div>";
-	}
-	echo "<div class='section-options-display' style='display:".$the_cookie."';>";
+    $the_cookie = (isset ($_COOKIE["{$plugin_type}sec"][$subsection]) ? $_COOKIE["{$plugin_type}sec"][$subsection] : 'none');
+    echo "<div class='section_toggle' id='{$plugin_type}sec[{$subsection}]'>";
+    if ($the_cookie == "none") {
+        echo "+</div>";
+    } else {
+        echo "-</div>";
+    }
+    echo "<div class='section-options-display' style='display:".$the_cookie."';>";
 }
 
 
@@ -40,15 +39,15 @@ function stock_plugin_create_per_category_stock_lists($plugin_type) { //plugin_t
         echo "<br/><span style='font-weight:bold;'>WARNING:</span><br/>If Default is blank, Stock {$plugin_type}s on pages without categories will be disabled.<br/>";
     }
     
-		
+        
     $category_terms = get_terms('category');
     if (count($category_terms)) { //NOTE: this may display without any categories below IF and only if there is only the uncategorized category
         echo "<h4 style='display:inline-block;'>Customize Categories</h4>";
-				stock_plugin_cookie_helper(0, $plugin_type);
-					echo "<p><b>Optional:</b><br />
-					Use this section to display specific stocks for posts/pages in specific categories.<br />
-					If a post belongs to multiple categories, the plugin will merge the stocks specified for those categories.<br />
-					If you leave a field blank, the category will use the default stock list specified above.</p>";
+                stock_plugin_cookie_helper(0, $plugin_type);
+                    echo "<p><b>Optional:</b><br />
+                    Use this section to display specific stocks for posts/pages in specific categories.<br />
+                    If a post belongs to multiple categories, the plugin will merge the stocks specified for those categories.<br />
+                    If you leave a field blank, the category will use the default stock list specified above.</p>";
         
         foreach ($category_terms as $term) {
             if ($term->slug == 'uncategorized') { continue; }
@@ -131,183 +130,81 @@ function stock_plugin_convert_old_category_stock_list($plugin_type) { //plugin_t
     delete_option("stock_{$plugin_type}_category_stock_list");
 }
 
-
-if ( ! class_exists( 'WP_List_Table' ) ) {
-    require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+//helper functions for using the table storage. 
+function convert_data_display($to_convert) {
+    //expects to convert an array of bits into an integer representation and vice versa
+    //array(0,1,1,1,1,0), //    32,16,8,4,2,1
+    if (is_array($to_convert)) {
+        return bindec(implode('', $to_convert));
+    }
+    elseif (is_int($to_convert)) {
+        $num = 6; //NOTE: this will need to be updated if we add more options to this flags array
+        $tmp = sprintf( "%0{$num}d", decbin($to_convert));
+        return str_split($tmp);
+    }
+    else
+        return false; //for error detection
 }
 
-//WARNING: WP_List_Table is not intended for use by plugin and theme developers as it is subject to change without warning in any future WordPress release
-// Recommended to make a copy of this class as is and include it with the plugin files.
-
-
-class stock_shortcode_List_Table extends WP_List_Table {
-    private $type;  //TODO: does this make this usable for both widget and ticker?
-
-    public static function define_columns() {
-            $columns = array(
-                    'cb'        => '<input type="checkbox" />',
-                    'id'        => 'ID',
-                    'shortcode' => 'Shortcode');//,
-                    //'author' => __( 'Author', 'contact-form-7' ),
-                    //'date' => __( 'Date', 'contact-form-7' ) );
-
-            return $columns;
-    }
-
-    function __construct($type) { //type is either widget or ticker
-            $this->type = $type;
-            parent::__construct( array( //TODO: I guess this fires the constructor of the WP_List_Table ?
-                    'singular' => 'post',
-                    'plural' => 'posts',
-                    'ajax' => false ) );
-    }
-
-    function prepare_items() { //NOTE: required to be overriden by subclass
-            //$current_screen = get_current_screen(); //unused?
-            $per_page = $this->get_items_per_page( 'stock_shortcodes_per_page' ); //from the hidden top menu where you can check/uncheck columns and configure how many rows to show
-
-            $this->_column_headers = $this->get_column_info();
-
-            $args = array(
-                    'posts_per_page' => $per_page,
-                    'orderby' => 'id',
-                    'order' => 'ASC',
-                    'offset' => ( $this->get_pagenum() - 1 ) * $per_page );
-
-            if ( ! empty( $_REQUEST['s'] ) )
-                    $args['s'] = $_REQUEST['s'];
-
-            if ( ! empty( $_REQUEST['orderby'] ) ) {
-                    if ( 'id' == $_REQUEST['orderby'] )
-                            $args['orderby'] = 'id';
-                    /*elseif ( 'author' == $_REQUEST['orderby'] )
-                            $args['orderby'] = 'author';
-                    elseif ( 'date' == $_REQUEST['orderby'] )
-                            $args['orderby'] = 'date';*/
-            }
-
-            if ( ! empty( $_REQUEST['order'] ) ) {
-                    if ( 'asc' == strtolower( $_REQUEST['order'] ) )
-                            $args['order'] = 'ASC';
-                    elseif ( 'desc' == strtolower( $_REQUEST['order'] ) )
-                            $args['order'] = 'DESC';
-            }
-
-            //$this->items = WPCF7_ContactForm::find( $args ); //TODO:  this just grabs all available shortcodes
-            //global $wpdb;
-            //TODO: think more about putting a list of all current IDs into a field of WP_options, instead of having to perform this wildcard search query.
-            //$result = $wpdb->get_results( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'stock_{$this->type}_sc_%'", OBJECT); //stock_{widget/ticker}_{short_code}_{ID}
-            $this->items = get_option("stock_{$this->type}_sc_ids");
-            /*$tmp = array();
-            foreach ($results as $r) {
-                $tmp[] = str_replace("stock_{$this->type}_sc_", "", $r->option_name);
-            }
-            $this->items = $tmp;*/
-            //TODO: does this->items have to be of any particular type? If it has to be of type "post" then we might be screwed
-            $total_items = count($this->items);
-
-            //$total_items = WPCF7_ContactForm::count();       //TODO: just do a count on the return from the previous line
-            //$total_items = $wpdb->num_rows;
-            $total_pages = ceil( $total_items / $per_page );
-
-            $this->set_pagination_args( array(
-                    'total_items' => $total_items,
-                    'total_pages' => $total_pages,
-                    'per_page'    => $per_page ) );
+//Drop in replacements for add_option, get_option, update_option, delete_option
+function sp_add_row($table_name, $values) {
+    global $wpdb;
+    
+    if (is_array($values['data_display'])) { //if this is not defined it is false
+        $values['data_display'] = convert_data_display($values['data_display']);
     }
     
-    function get_columns() { //NOTE: required to be overriden by subclass
-            return get_column_headers( get_current_screen() );
-    }
-
-    function get_sortable_columns() {
-            $columns = array(
-                    /*'title' => array( 'title', true ),
-                    'author' => array( 'author', false ),
-                    'date' => array( 'date', false ) );*/
-                    'id' => array('id', true));
-
-            return $columns;
-    }
-
-    function get_bulk_actions() {
-            $actions = array(
-                    'delete' => 'Delete'
-            );
-
-            return $actions;
-    }
-
-    function column_default( $item, $column_name ) {
-            return '';
-    }
-
-    function column_cb( $item ) {
-            return sprintf(
-                        '<input type="checkbox" name="%1$s[]" value="%2$s" />',
-                        $this->_args['singular'],
-                        $item
-                    );
-    }
-    
-    //function column_title( $item ) {
-    function column_id( $item ) {
-            $url       = admin_url( "admin.php?page=stock_{$this->type}_admin&id=" . $item  );
-            $edit_link = add_query_arg( array( 'action' => 'edit' ), $url );
-            $copy_link = wp_nonce_url( add_query_arg( array( 'action' => 'copy' ), $url ), "stock-{$this->type}-copy_$item"); //TODO: use check_admin_referer(); to verify the nonce on the other end
-
-            $actions = array(
-                    'edit' => '<a href="' . $edit_link . '">Edit</a>',
-                    'copy' => '<a href="' . $copy_link . '">Copy</a>'
-            );
-
-            $a = sprintf( '<a class="row-title" href="%1$s" title="%2$s">%3$s</a>',
-                    $edit_link,
-                    esc_attr( sprintf('Edit &#8220;%s&#8221;', $item ) ), //TODO: does this work?
-                    esc_html( $item ) 
-                );
-
-            return '<strong>' . $a . '</strong> ' . $this->row_actions( $actions ); //this is the clickable name of the shortcode that takes us to the edit page (same as edit button)
-    }
-
-    /*function column_author( $item ) {
-            $post = get_post( $item->id() );
-
-            if ( ! $post )
-                    return;
-
-            $author = get_userdata( $post->post_author );
-
-            return esc_html( $author->display_name );
-    }*/
-    
-    function column_shortcode( $item ) { //these are functions executed by parent class single_row_columns()
-            $shortcode = "[stock_{$this->type}" . ' id="' . $item . '"]';
-
-            return '<input type="text" onfocus="this.select();" readonly="readonly" value="' 
-                    . esc_attr( $shortcode ) . '" class="shortcode-in-list-table wp-ui-text-highlight code" />';
-        }
-
-        /*function column_date( $item ) {
-            $post = get_post( $item->id() );
-
-            if ( ! $post )
-                    return;
-
-            $t_time = mysql2date( __( 'Y/m/d g:i:s A', 'contact-form-7' ), $post->post_date, true );
-            $m_time = $post->post_date;
-            $time = mysql2date( 'G', $post->post_date ) - get_option( 'gmt_offset' ) * 3600;
-
-            $time_diff = time() - $time;
-
-            if ( $time_diff > 0 && $time_diff < 24*60*60 )
-                    $h_time = sprintf( __( '%s ago', 'contact-form-7' ), human_time_diff( $time ) );
-            else
-                    $h_time = mysql2date( __( 'Y/m/d', 'contact-form-7' ), $m_time );
-
-            return '<abbr title="' . $t_time . '">' . $h_time . '</abbr>';
-    }*/
+    //insert(table_name, data)
+    $status = $wpdb->insert($table_name, $values);
+    //NOTE: if we need the new auto_increment id its here $wpdb->insert_id
+    //false on error, otherwise returns 1 row updated
+    return $status;
 }
 
+//Function should expect the array parameters same as update_option()
+function sp_update_row($table_name, $name, $values) {
+    global $wpdb;
+    
+    if (is_array($values['data_display'])) {
+        $values['data_display'] = convert_data_display($values['data_display']);
+    }
+    
+    //update(table_name, data, where)
+    $status = $wpdb->update($table_name, $values, array('name' => $name));
+    //false on error, number of rows updated otherwise
+    return $status;
+}
+
+function sp_get_row($table_name, $name) {
+    global $wpdb;
+    
+    $sql = "SELECT * FROM {$table_name} WHERE name = '{$name}'";
+    $result = $wpdb->get_row($sql, ARRAY_A);
+    
+    //NOTE: everything that comes out of mysql is a string -- is there anything else I need to convert?
+    $result['data_display'] = convert_data_display((int)$result['data_display']);
+
+    //print_r($result);
+    return $result; //don't forget to check for NULL if nothing returned
+}
+
+//to implement later
+function sp_multi_get_row($table_name, $name) { //how do we want to retrieve these? what options? Sorting etc
+    global $wpdb;
+    
+    
+}
+
+//to implement later
+function sp_delete_row($table_name, $name) {
+    global $wpdb;
+    
+    //NOTE: do not allow id=1 to be deleted, this one is special
+}
+
+//to implement later
+function sp_clone_row() { //for copying a row as baseline for a new one
+    global $wpdb;
+}
 
 ?>

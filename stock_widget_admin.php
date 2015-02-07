@@ -1,11 +1,10 @@
 <?php
-
 /*
     Plugin Name: Custom Stock Widget
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.3.5b
+    Version: 1.4
     Author URI: http://relevad.com/
 
 */
@@ -26,127 +25,187 @@
     along with this program; if not, write to the Free Software 
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 */
+namespace stockWidget;
+define(__NAMESPACE__ . '\NS', __NAMESPACE__ . '\\');
 
-// Feature Improvement: think about putting each individual config into a class, does that buy us anything?
 
-if (!defined('STOCK_PLUGIN_UTILS') ) {
-    include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_utils.php'; //used to contain validation functions
-    
-    if (!defined('RELEVAD_PLUGIN_UTILS')) {
-        include WP_CONTENT_DIR . '/plugins/custom-stock-widget/relevad_plugin_utils.php';
-    }
-}
-if (!defined('STOCK_PLUGIN_CACHE') ) {
-    include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_cache.php';
-}
+global $wpdb;
+global $sw_global;
+$sw_global = new \stdClass();
+$sw_global->table_name = $wpdb->prefix . 'stock_widgets';
+$sw_global->charset    = $wpdb->get_charset_collate(); //requires WP v3.5
 
-    include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php';
-
-$sw_current_version = '1.3.5';
-$stock_widget_vp = array( //validation_parameters
+$sw_global->current_version   = '1.4'; //NOTE: should always match Version: ### in the plugin special comment
+$sw_global->validation_params = array(
 'max_display'  => array(1,100),
 'width'        => array(100,500),
 'height'       => array(100,1000),
 'font_size'    => array(5,32),
 'change_styles'=> array("None", "Box", "Parentheses")
 );
+//using this we might be able to reduce the number of variables passed around between functions
+
+// Feature Improvement: think about putting each individual config into a class, does that buy us anything?
+// http://stackoverflow.com/questions/1957732/can-i-include-code-into-a-php-class
+
+include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_utils.php'; //used to contain validation functions
+include WP_CONTENT_DIR . '/plugins/custom-stock-widget/relevad_plugin_utils.php';
+include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_plugin_cache.php';
+include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php';
+
+function stock_widget_create_db_table() {  //NOTE: for brevity into a function
+    global $sw_global;
+    
+    //NOTE: later may want: 'default_market'    => 'DOW',   'display_options_strings' 
+    $sql = "CREATE TABLE {$sw_global->table_name} (
+    id                      mediumint(9)                    NOT NULL AUTO_INCREMENT,
+    name                    varchar(50)  DEFAULT ''         NOT NULL ,
+    bg_color1               varchar(7)   DEFAULT '#000000'  NOT NULL,
+    bg_color2               varchar(7)   DEFAULT '#7F7F7F'  NOT NULL,
+    font_color              varchar(7)   DEFAULT '#5DFC0A'  NOT NULL,
+    font_family             varchar(20)  DEFAULT 'Times'    NOT NULL,
+    display_order           varchar(10)  DEFAULT 'Preset'   NOT NULL,
+    change_style            varchar(10)  DEFAULT 'Box'      NOT NULL,
+    font_size               tinyint(3)   DEFAULT 12         NOT NULL,
+    width                   smallint(4)  DEFAULT 300        NOT NULL,
+    height                  smallint(4)  DEFAULT 70         NOT NULL,
+    data_display            tinyint(2)   DEFAULT 30         NOT NULL,
+    display_number          tinyint(3)   DEFAULT 5          NOT NULL,
+    draw_vertical_lines     tinyint(1)   DEFAULT 0          NOT NULL,
+    draw_horizontal_lines   tinyint(1)   DEFAULT 0          NOT NULL,
+    show_header             tinyint(1)   DEFAULT 0          NOT NULL,
+    stock_page_url          text         NOT NULL,
+    stock_list              text         NOT NULL,
+    advanced_style          text         NOT NULL,
+    UNIQUE KEY (name),
+    PRIMARY KEY (id)
+    ) {$sw_global->charset};";
+    
+    //NOTE: Extra spaces for readability screw up dbDelta, so we remove those
+    $sql = preg_replace('/ +/', ' ', $sql);
+    //NOTE: WE NEED 2 spaces exactly between PRIMARY KEY and its definition.
+    $sql = str_replace('PRIMARY KEY', 'PRIMARY KEY ', $sql);
+    
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    dbDelta( $sql ); //this will return an array saying what was done, if we want to output it
+}
 
 function stock_widget_activate() {
-    add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL')); //Important no spaces
-    //add_option('stock_widget_version', $sw_current_version); //DO NOT add this here, it could break versioning
-    
-    //Holds the default settings
-    $stock_widget_default_settings = Array(
-        'data_display'      => array(0,1,1,1,1,0),
-        //'default_market'    => 'DOW',
-        //'display_options_strings' => array("Market", "Symbol", "Last value", "Change value", "Change percentage", "Last trade"),
-        'font_color'            => '#5DFC0A', 
-        'bg_color1'             => '#000000',
-        'bg_color2'             => '#7F7F7F', //NOTE: removed border color entirely
-        'width'                 => 300,
-        'height'                => 70,
-        'font_size'             => 12,
-        'font_family'           => 'Times',
-        'display_number'        => 5,  //from max_display
-        'advanced_style'        => 'margin: auto;',
-        'draw_vertical_lines'   => false,  //vertical_dash
-        'draw_horizontal_lines' => false,  //horizontal_dash
-        'show_header'           => false,
-        'display_order'         => 'Preset', //from display_type
-        'change_style'          => 'Box',    //its how the stock change status is emphasized
-        'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK__'
-        );
-    add_option('stock_widget_default_settings', $stock_widget_default_settings); //one option to rule them all
+    global $sw_global;
 
+    if (!get_option('stock_widget_category_stock_list') && !get_option('stock_widget_per_category_stock_lists')) {
+        //if neither of these exist then assume initial install
+        stock_widget_create_db_table();
+        $values = array( //NOTE: the rest should all be the defaults
+                        'name'           => 'Default Settings',
+                        'advanced_style' => 'margin: auto;',
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        );
+        sp_add_row($sw_global->table_name, $values);
+        add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL'));
+        add_option('stock_widget_version',                         $sw_global->current_version);
+        add_option('stock_widget_version_text', "Initial install v{$sw_global->current_version}");
+    }
 }
-register_activation_hook( __FILE__, 'stock_widget_activate' );
+register_activation_hook( __FILE__, NS.'stock_widget_activate' ); //does this happen imediately or not?
+
+//NOTE: just installing a plugin, does not make any of its code run, it needs to be activated first.
+
+
 
 //*********cleanup and conversion functions for updating versions *********
-$sw_db_version = get_option('stock_widget_version', '0');
+function stock_widget_handle_update() {
+    global $sw_global;
+    
+    $db_version = get_option('stock_widget_version', '0');
 
-//NOTE: Don't forget to add each and every version number as a case
-switch($sw_db_version) {
-    case '0': //if versioning did not exist yet, then use old method
-        //version 1.0 -> 1.1 
-        if (get_option('stock_widget_category_stock_list')) { //this old option exists
-            stock_plugin_convert_old_category_stock_list('widget');
+    //NOTE: Don't forget to add each and every version number as a case
+    switch($db_version) {
+        case '0': //if versioning did not exist yet, then use old method
+            //version 1.0 -> 1.1 
+            if (get_option('stock_widget_category_stock_list')) { //this old option exists
+                stock_plugin_convert_old_category_stock_list('widget');
+                
+                $tmp = get_option('stock_widget_data_display');
+                update_option('stock_widget_data_display', array_values($tmp));
+            }
+            //version 1.1 -> 1.3
+            if (get_option('stock_widget_color_scheme')) { //this old option exists
+                stock_widget_convert_old_options(); 
+            }
+
+        case '1.3.2': //Added this versioning system in this version
+        case '1.3.3':
+        case '1.3.4':
+        case '1.3.5':
+            stock_widget_create_db_table(); //this should only be called once if needed
+            $default_settings = get_option('stock_widget_default_settings', false);
+            if ($default_settings === false) { //if no other version existed
+                $values = array( //NOTE: the rest should all be the defaults
+                        'name'           => 'Default Settings',
+                        'advanced_style' => 'margin: auto;',
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        );
+                sp_add_row($sw_global->table_name, $values);
+            }
+            else {
+                unset($default_settings['show_headers']); //if this exists get rid of it
+                $default_settings['name'] = 'Default Settings';
+                sp_add_row($sw_global->table_name, $default_settings);
+                delete_option('stock_widget_default_settings');
+            }
             
-            $tmp = get_option('stock_widget_data_display');
-            update_option('stock_widget_data_display', array_values($tmp));
-        }
-        //version 1.1 -> 1.3
-        if (get_option('stock_widget_color_scheme')) { //this old option exists
-            stock_widget_convert_old_options(); 
-        }
-
-    case '1.3.2':
-    case '1.3.3':
-	case '1.3.4':
-        update_option('stock_widget_version',      $sw_current_version); //this will always be right above sw_current_version case
-        update_option('stock_widget_version_text', " updated from v{$sw_db_version} to"); //keep these 2 updates paired
-        //NOTE: takes care of add_option() as well
-    case $sw_current_version:
-        break;
-    //NOTE: if for any reason the database entry disapears again we might have a problem updating or performing table modifcations on tables already modified.
-    default: //this shouldn't be needed
-        //future version? downgrading?
-        update_option('stock_widget_version_text', " found v{$sw_db_version} current version");
-        break;
+            //*****************************************************
+            //this will always be right above sw_global->current_version case
+            //keep these 2 updates paired
+            update_option('stock_widget_version',      $sw_global->current_version);
+            update_option('stock_widget_version_text', " updated from v{$db_version} to");
+            //NOTE: takes care of add_option() as well
+        case $sw_global->current_version:
+            break;
+        //NOTE: if for any reason the database entry disapears again we might have a problem updating or performing table modifcations on tables already modified.
+        default: //this shouldn't be needed
+            //future version? downgrading?
+            update_option('stock_widget_version_text', " found v{$db_version} current version");
+            break;
+    }
 }
 
 function stock_widget_admin_enqueue($hook) {
-    global $sw_current_version;
-    //if ($hook != 'settings_page_stock_widget_admin') {return;} //do not run on other admin pages
+    global $sw_global;
+
     if ($hook != 'relevad-plugins_page_stock_widget_admin') {return;} //do not run on other admin pages
 
-    wp_register_style ('stock_plugin_admin_style',  plugins_url('stock_plugin_admin_style.css', __FILE__), false, $sw_current_version);
-    wp_register_script('stock_plugin_admin_script', plugins_url('stock_plugin_admin_script.js', __FILE__), array( 'jquery' ), $sw_current_version, false);
+    wp_register_style ('stock_plugin_admin_style',  plugins_url('stock_plugin_admin_style.css', __FILE__), false,             $sw_global->current_version);
+    wp_register_script('stock_plugin_admin_script', plugins_url('stock_plugin_admin_script.js', __FILE__), array( 'jquery' ), $sw_global->current_version, false);
 
     wp_enqueue_style ('stock_plugin_admin_style');
     wp_enqueue_script('stock_plugin_admin_script');
     
     stock_widget_scripts_enqueue(true); //we also need these scripts
 }
-add_action('admin_enqueue_scripts', 'stock_widget_admin_enqueue');
+add_action('admin_enqueue_scripts', NS.'stock_widget_admin_enqueue');
 
 function stock_widget_admin_actions() {
     
     relevad_plugin_add_menu_section(); //imported from relevad_plugin_utils.php
     
     //$hook = add_options_page('StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', 'stock_widget_admin_page'); //wrapper for add_submenu_page specifically into "settings"
-    $hook = add_submenu_page('relevad_plugins', 'StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', 'stock_widget_admin_page'); 
+    $hook = add_submenu_page('relevad_plugins', 'StockWidget', 'StockWidget', 'manage_options', 'stock_widget_admin', NS.'stock_widget_admin_page'); 
     //add_submenu_page( 'options-general.php', $page_title,     $menu_title,    $capability,     $menu_slug,           $function ); // do not use __FILE__ for menu_slug
 }
-add_action('admin_menu', 'stock_widget_admin_actions');
+add_action('admin_menu', NS.'stock_widget_admin_actions');
 
 
 //for debugging only
 function stock_widget_reset_options() {
+    global $sw_global;
     update_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL')); //Important no spaces
     
     $stock_widget_default_settings = Array(
-        'data_display'      => array(0,1,1,1,1,0),
-        //'default_market'    => 'DOW',
+        'name'                  => 'Default Settings',
+        'data_display'          => array(0,1,1,1,1,0),
+        //'default_market'      => 'DOW',
         //'display_options_strings' => array("Market", "Symbol", "Last value", "Change value", "Change percentage", "Last trade"),
         'font_color'            => '#5DFC0A', 
         'bg_color1'             => '#000000',
@@ -164,15 +223,20 @@ function stock_widget_reset_options() {
         'change_style'          => 'Box',    //its how the stock change status is emphasized
         'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK__'
         );
-    update_option('stock_widget_default_settings', $stock_widget_default_settings); //one option to rule them all
+    
+    sp_update_row($sw_global->table_name, 'Default Settings', $stock_widget_default_settings);
+    //or do we want to drop table, and recreate from scratch? Would probably want to rename as "re-initialize" 
 }
 
 
 /** Creates the admin page. **/
 function stock_widget_admin_page() {
-    global $sw_current_version;
-    $version_txt = get_option('stock_widget_version_text', '') . " v{$sw_current_version}";
+    stock_widget_handle_update();
+    
+    global $sw_global;
+    $version_txt = get_option('stock_widget_version_text', '') . " v{$sw_global->current_version}";
     update_option('stock_widget_version_text', ''); //clear the option after we display it once
+    
     echo <<<HEREDOC
 <div id="sp-options-page">
     <h1>Custom Stock Widget</h1><sub>{$version_txt}</sub>
@@ -181,7 +245,6 @@ function stock_widget_admin_page() {
     Then place your the shortcode <code>[stock-widget]</code> inside a post, page, or <a href="https://wordpress.org/plugins/shortcode-widget/" ref="external nofollow" target="_blank">Shortcode Widget</a>.<br />
     Or, you can use <code>&lt;?php echo do_shortcode('[stock-widget]'); ?&gt;</code> inside your theme files or <a href="https://wordpress.org/plugins/php-code-widget/" ref="external nofollow" target="_blank">PHP Code Widget</a>.
     </p>
-    
 HEREDOC;
     
     if (isset($_POST['save_changes'])) {
@@ -215,7 +278,9 @@ HEREDOC;
 
 //Creates the entire options page. Useful for formatting.
 function stock_widget_create_options_config() {
-        $sw_ds = get_option('stock_widget_default_settings');
+        global $sw_global;
+    
+        $sw_ds = sp_get_row($sw_global->table_name, 'Default Settings');
         echo "<form action='' method='POST'>
              <div id='sp-form-div' class='postbox-container sp-options'>
                 <div id='normal-sortables' class='meta-box-sortables ui-sortable'>
@@ -225,31 +290,31 @@ function stock_widget_create_options_config() {
                             stock_widget_create_template_field();
         echo "              <div class='sp-options-subsection'>
                                 <h4>Widget Config</h4>";
-								stock_plugin_cookie_helper(1, 'widget');
+                                    stock_plugin_cookie_helper(1, 'widget');
                                     stock_widget_create_widget_config_section($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
                                 <h4>Text Config</h4>";
-								stock_plugin_cookie_helper(2, 'widget');
+                                    stock_plugin_cookie_helper(2, 'widget');
                                     stock_widget_create_text_config($sw_ds);
         echo "                  </div>
                             </div>
                             <div class='sp-options-subsection'>
                                 <h4>Stock Display Config</h4>";
-								stock_plugin_cookie_helper(3, 'widget');
+                                    stock_plugin_cookie_helper(3, 'widget');
                                     stock_widget_create_display_options($sw_ds);
        echo "                   </div>
                             </div>
                            <div class='sp-options-subsection'>
                                 <h4>Advanced Styling</h4>";
-								stock_plugin_cookie_helper(4, 'widget');
+                                    stock_plugin_cookie_helper(4, 'widget');
                                     stock_widget_create_style_field($sw_ds);
         echo "                  </div>
                             </div>
                            <div class='sp-options-subsection'>
                                 <h4>URL Link</h4>";
-								stock_plugin_cookie_helper(5, 'widget');
+                                    stock_plugin_cookie_helper(5, 'widget');
                                     stock_widget_create_url_field($sw_ds);
         echo "                  </div>
                     </div>
@@ -361,9 +426,8 @@ function stock_widget_create_template_field() {
 }
 
 function stock_widget_update_options() {
-    
-    global $stock_widget_vp;
-    $sw_ds             = get_option('stock_widget_default_settings');
+    global $sw_global;
+    $sw_ds             = sp_get_row($sw_global->table_name, 'Default Settings');
     $selected_template = $_POST['template'];  //NOTE: if this doesn't exist it'll be NULL
     $all_templates     = stock_widget_templates();
     
@@ -393,15 +457,15 @@ function stock_widget_update_options() {
     $sw_ds_new['display_order'] = $_POST['display_type']; //these are dropdowns so no validation necessary -- unless someone deliberately tries to post garbage to us
     $sw_ds_new['change_style']  = $_POST['change_style'];
     
-    $tmp = relevad_plugin_validate_integer($_POST['max_display'],  $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  false);
+    $tmp = relevad_plugin_validate_integer($_POST['max_display'],  $sw_global->validation_params['max_display'][0],  $sw_global->validation_params['max_display'][1],  false);
     if ($tmp) {
     $sw_ds_new['display_number'] = $tmp;
     }
     
-    $sw_ds_new['width']  = relevad_plugin_validate_integer($_POST['width'],  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $sw_ds['width']);
-    $sw_ds_new['height'] = relevad_plugin_validate_integer($_POST['height'], $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $sw_ds['height']);
+    $sw_ds_new['width']  = relevad_plugin_validate_integer($_POST['width'],  $sw_global->validation_params['width'][0],  $sw_global->validation_params['width'][1],  $sw_ds['width']);
+    $sw_ds_new['height'] = relevad_plugin_validate_integer($_POST['height'], $sw_global->validation_params['height'][0], $sw_global->validation_params['height'][1], $sw_ds['height']);
 
-    $sw_ds_new['font_size']   = relevad_plugin_validate_integer(    $_POST['font_size'],   $stock_widget_vp['font_size'][0],  $stock_widget_vp['font_size'][1],  $sw_ds['font_size']);
+    $sw_ds_new['font_size']   = relevad_plugin_validate_integer(    $_POST['font_size'],   $sw_global->validation_params['font_size'][0],  $sw_global->validation_params['font_size'][1],  $sw_ds['font_size']);
     $sw_ds_new['font_family'] = relevad_plugin_validate_font_family($_POST['font_family'], $sw_ds['font_family']);
 
     $sw_ds_new['font_color'] = relevad_plugin_validate_color($_POST['text_color'],        $sw_ds['font_color']);
@@ -426,7 +490,7 @@ function stock_widget_update_options() {
     //****** end fix scaling ******* 
     
     //now merge template settings > post changes > old unchanged settings
-    update_option('stock_widget_default_settings', array_replace($sw_ds, $sw_ds_new, $template_settings));
+    sp_update_row($sw_global->table_name, 'Default Settings', array_replace($sw_ds, $sw_ds_new, $template_settings));
 }
 
 function stock_widget_create_widget_config_section($sw_ds) {
@@ -447,12 +511,12 @@ function stock_widget_create_widget_config_section($sw_ds) {
         <label for="input_background_color1">Odd Row Background Color:</label>
         <input  id="input_background_color1" name="background_color1" type="text" value="{$bg_color1}" class="itxt color_input" style="width:99px;" />
         <sup id="background_color_picker_help1"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
-		<script>enhanceTypeColor("input_background_color1", "background_color_picker_help1");</script>
+        <script>enhanceTypeColor("input_background_color1", "background_color_picker_help1");</script>
         <br />
         <label for="input_background_color2">Even Row Background Color:</label>
         <input  id="input_background_color2" name="background_color2" type="text" value="{$bg_color2}" class="itxt color_input" style="width:99px;" />
         <sup id="background_color_picker_help2"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
-		<script>enhanceTypeColor("input_background_color2", "background_color_picker_help2");</script>
+        <script>enhanceTypeColor("input_background_color2", "background_color_picker_help2");</script>
 HEREDOC;
 }
 
@@ -463,7 +527,7 @@ function stock_widget_create_text_config($sw_ds) {
         <label for="input_text_color">Color: </label>
         <input  id="input_text_color" name="text_color" type="text" value="<?php echo $sw_ds['font_color']; ?>" class="itxt color_input" style="width:100px;" />
         <sup id="text_color_picker_help"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
-		<script>enhanceTypeColor("input_text_color", "text_color_picker_help");</script>
+        <script>enhanceTypeColor("input_text_color", "text_color_picker_help");</script>
         
         <label for="input_font_size">Size: </label>
         <input  id="input_font_size" name="font_size" type="text" value="<?php echo $sw_ds['font_size']; ?>" class="itxt" style="width:40px;"/>
@@ -482,6 +546,8 @@ function stock_widget_create_text_config($sw_ds) {
 }
 
 function stock_widget_create_display_options($sw_ds) {
+    global $sw_global;
+    
     $all_orders      = array('Preset', 'A-Z', 'Z-A', 'Random');
     //NOTE for data_display: options 0 and 1 are "market" and the "stock symbol" itself
     //      option 5 is the "last trade"
@@ -517,8 +583,7 @@ function stock_widget_create_display_options($sw_ds) {
     </select>
     <br />
     <?php
-    global $stock_widget_vp;
-    $all_change_styles = $stock_widget_vp['change_styles'];
+    $all_change_styles = $sw_global->validation_params['change_styles'];
     ?>
     <label for="input_change_style">Price Change Style: </label>
     <select id="input_change_style" name="change_style"  style="width: 130px;">

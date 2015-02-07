@@ -1,11 +1,13 @@
 <?php
+namespace stockWidget;
 
-
+//NOTE: so long as plugin is activated, these will be included regardless of whether the shortcode is on the page
 function stock_widget_scripts_enqueue($force = false) {
-    global $sw_current_version;
+    global $sw_global;
+
     if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
-    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $sw_current_version);
+    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $sw_global->current_version);
 
     wp_enqueue_style ('stock_widget_style');
 
@@ -13,13 +15,17 @@ function stock_widget_scripts_enqueue($force = false) {
     $feed_tag = ( !array_key_exists('reletime', $_COOKIE)  ? "?ft=customstockwidget" : "");
     wp_enqueue_script('ipq', "http://websking.com/static/js/ipq.js{$feed_tag}", array(), null, true); //skipping register step
 }
-add_action('wp_enqueue_scripts', 'stock_widget_scripts_enqueue');
+add_action('wp_enqueue_scripts', NS.'stock_widget_scripts_enqueue');
 
 
-add_shortcode('stock-widget', 'stock_widget');
+add_shortcode('stock-widget', NS.'stock_widget');
 
 
 function stock_widget($atts) {
+    global $sw_global;
+    
+    stock_widget_handle_update();
+    
     $output = "";
     
     //NOTE: skipping attributes, because first priority is to get the stock list, if that doesn't exist, nothing else matters.
@@ -73,7 +79,7 @@ function stock_widget($atts) {
     }
 
     
-    $sw_ds = get_option('stock_widget_default_settings');
+    $sw_ds = sp_get_row($sw_global->table_name, 'Default Settings');
 
     extract( shortcode_atts( array(  //we can use nulls for this, since defaults are part of the validation
         'id'                => '0',
@@ -91,10 +97,9 @@ function stock_widget($atts) {
     if ($bgcolor2 == null) { $bgcolor2 = $background_color2; }
     
     //**********validation section***********
-    global $stock_widget_vp;
     //NOTE: for validation, if option supplied was invalid, use the "global" setting
-    $width          = relevad_plugin_validate_integer($width,  $stock_widget_vp['width'][0],  $stock_widget_vp['width'][1],  $sw_ds['width']);
-    $height         = relevad_plugin_validate_integer($height, $stock_widget_vp['height'][0], $stock_widget_vp['height'][1], $sw_ds['height']);
+    $width          = relevad_plugin_validate_integer($width,  $sw_global->validation_params['width'][0],  $sw_global->validation_params['width'][1],  $sw_ds['width']);
+    $height         = relevad_plugin_validate_integer($height, $sw_global->validation_params['height'][0], $sw_global->validation_params['height'][1], $sw_ds['height']);
     
     $text_color     = relevad_plugin_validate_color($text_color, $sw_ds['font_color']);
     $bgcolor1       = relevad_plugin_validate_color($bgcolor1,   $sw_ds['bg_color1']);
@@ -102,19 +107,20 @@ function stock_widget($atts) {
     
     if ($change_style != null) {
         $change_style = ucwords($change_style);
-        if (! in_array($change_style, $stock_widget_vp['change_styles']) ) {
+        if (! in_array($change_style, $sw_global->validation_params['change_styles']) ) {
             $change_style = 'None';
         }
     }
     
-    $num_to_display = relevad_plugin_validate_integer($display, $stock_widget_vp['max_display'][0],  $stock_widget_vp['max_display'][1],  $sw_ds['display_number']);
+    $num_to_display = relevad_plugin_validate_integer($display, $sw_global->validation_params['max_display'][0],  $sw_global->validation_params['max_display'][1],  $sw_ds['display_number']);
     //***********DONE validation*************
     $num_to_display = min(count($stock_data_list), $num_to_display);
+    $bonus_header = 0;
     if ($sw_ds['show_header']) {
-        $num_to_display += 1; //add 1 row for the header
+        $bonus_header = 1; //add 1 row for the header
     }
-   
-    $output .= stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display);
+    
+    $output .= stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display + $bonus_header);
     $output .=      stock_widget_create_table($id, $sw_ds, $stock_data_list, $num_to_display);
     return $output;
 }

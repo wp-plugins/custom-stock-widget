@@ -1,6 +1,6 @@
 <?php
-
-define('RELEVAD_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
+namespace stockWidget;
+//define('RELEVAD_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
 
 //helper function for all min/max integers
 function relevad_plugin_validate_integer($new_val, $min_val, $max_val, $default) {
@@ -47,11 +47,11 @@ function relevad_plugin_validate_opacity($new_val, $default) {
 
 function relevad_plugin_add_menu_section() {
     if (!defined('RELEVAD_PLUGIN_MENU') ) {
-        add_object_page(   'Relevad Plugins', 'Relevad Plugins', 'manage_options', 'relevad_plugins', 'relevad_plugin_welcome_screen' ); //this function is just a welcome screen thingy
+        add_object_page(   'Relevad Plugins', 'Relevad Plugins', 'manage_options', 'relevad_plugins', NS.'relevad_plugin_welcome_screen' ); //this function is just a welcome screen thingy
         //add_object_page( $page_title,        $menu_title,          $capability,       $menu_slug,        $function,                      $icon_url )
         
         //Dummy so that we don't get an automatic submenu option of the above
-        add_submenu_page('relevad_plugins', 'Relevad Plugins', 'Welcome', 'manage_options', 'relevad_plugins', 'relevad_plugin_welcome_screen' );
+        add_submenu_page('relevad_plugins', 'Relevad Plugins', 'Welcome', 'manage_options', 'relevad_plugins', NS.'relevad_plugin_welcome_screen' );
         
         define('RELEVAD_PLUGIN_MENU', true, false); //flag for whether this menu has already been added
     }
