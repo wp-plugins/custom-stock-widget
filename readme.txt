@@ -3,7 +3,7 @@ Contributors: Relevad
 Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.1
-Stable tag: 1.3.5b
+Stable tag: 1.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,7 @@ Features:
 
 Requirements:
 
- * PHP version >= 5.3.0 (experimental support for lower versions)
+ * PHP version >= 5.3.0 (Dependent on 5.3 functionality. Plugin will not work without 5.3 or higher)
  * Jquery version 1.6 or higher (wordpress 4.1 ships with 1.11.1)
  * Ability to execute wordpress shortcodes in the location(s) you want to place stocks. (see installation)
 
@@ -117,6 +117,11 @@ Email us at stock-widget AT relevad DOT com or go to the support section of this
 
 == Changelog ==
 
+= 1.4 =
+
+* Stock tickers are now stored in a separate database table
+* Stability improvements incase of version miss-match
+
 = 1.3.5b =
 
 * Bugfix with UI
@@ -166,6 +171,6 @@ Plugin released.
 
 == Upgrade Notice ==
 
-= 1.3 =
+= 1.4 =
 
 Upgrade to get the latest fixes and feature improvements
