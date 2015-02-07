@@ -119,7 +119,7 @@ Email us at stock-widget AT relevad DOT com or go to the support section of this
 
 = 1.4 =
 
-* Stock tickers are now stored in a separate database table
+* Stock widgets are now stored in a separate database table
 * Stability improvements incase of version miss-match
 
 = 1.3.5b =
