@@ -43,11 +43,11 @@
    border-radius:    4px;
    background-color: gray;
 }
-.stock_table .stock_widget_element .box.sw_red {
+.stock_table .stock_widget_element .sw_box.sw_red {
    border:           2px solid #990000;
    background-color: red;
 }
-.stock_table .stock_widget_element .box.sw_green {
+.stock_table .stock_widget_element .sw_box.sw_green {
    border:           2px solid #006800;
    background-color: green;
 }
