@@ -4,7 +4,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 1.4
+    Version: 1.4.1
     Author URI: http://relevad.com/
 
 */
@@ -35,7 +35,7 @@ $sw_global = new \stdClass();
 $sw_global->table_name = $wpdb->prefix . 'stock_widgets';
 $sw_global->charset    = $wpdb->get_charset_collate(); //requires WP v3.5
 
-$sw_global->current_version   = '1.4'; //NOTE: should always match Version: ### in the plugin special comment
+$sw_global->current_version   = '1.4.1'; //NOTE: should always match Version: ### in the plugin special comment
 $sw_global->validation_params = array(
 'max_display'  => array(1,100),
 'width'        => array(100,500),
@@ -55,17 +55,19 @@ include WP_CONTENT_DIR . '/plugins/custom-stock-widget/stock_widget_display.php'
 
 function stock_widget_create_db_table() {  //NOTE: for brevity into a function
     global $sw_global;
+    static $run_once = true; //on first run = true
+    if ($run_once === false) return;
     
     //NOTE: later may want: 'default_market'    => 'DOW',   'display_options_strings' 
     $sql = "CREATE TABLE {$sw_global->table_name} (
     id                      mediumint(9)                    NOT NULL AUTO_INCREMENT,
-    name                    varchar(50)  DEFAULT ''         NOT NULL ,
+    name                    varchar(50)  DEFAULT ''         NOT NULL,
     bg_color1               varchar(7)   DEFAULT '#000000'  NOT NULL,
     bg_color2               varchar(7)   DEFAULT '#7F7F7F'  NOT NULL,
     font_color              varchar(7)   DEFAULT '#5DFC0A'  NOT NULL,
     font_family             varchar(20)  DEFAULT 'Times'    NOT NULL,
-    display_order           varchar(10)  DEFAULT 'Preset'   NOT NULL,
-    change_style            varchar(10)  DEFAULT 'Box'      NOT NULL,
+    display_order           varchar(20)  DEFAULT 'Preset'   NOT NULL,
+    change_style            varchar(20)  DEFAULT 'Box'      NOT NULL,
     font_size               tinyint(3)   DEFAULT 12         NOT NULL,
     width                   smallint(4)  DEFAULT 300        NOT NULL,
     height                  smallint(4)  DEFAULT 70         NOT NULL,
@@ -77,7 +79,7 @@ function stock_widget_create_db_table() {  //NOTE: for brevity into a function
     stock_page_url          text         NOT NULL,
     stock_list              text         NOT NULL,
     advanced_style          text         NOT NULL,
-    UNIQUE KEY (name),
+    UNIQUE KEY name (name),
     PRIMARY KEY (id)
     ) {$sw_global->charset};";
     
@@ -88,6 +90,7 @@ function stock_widget_create_db_table() {  //NOTE: for brevity into a function
     
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql ); //this will return an array saying what was done, if we want to output it
+    $run_once = false;
 }
 
 function stock_widget_activate() {
@@ -138,22 +141,15 @@ function stock_widget_handle_update() {
         case '1.3.3':
         case '1.3.4':
         case '1.3.5':
-            stock_widget_create_db_table(); //this should only be called once if needed
-            $default_settings = get_option('stock_widget_default_settings', false);
-            if ($default_settings === false) { //if no other version existed
-                $values = array( //NOTE: the rest should all be the defaults
-                        'name'           => 'Default Settings',
-                        'advanced_style' => 'margin: auto;',
-                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
-                        );
-                sp_add_row($sw_global->table_name, $values);
-            }
-            else {
-                unset($default_settings['show_headers']); //if this exists get rid of it
-                $default_settings['name'] = 'Default Settings';
-                sp_add_row($sw_global->table_name, $default_settings);
+            stock_widget_create_db_table(); //this should only be called once if at all
+
+            unset($default_settings['show_headers']); //if this exists get rid of it
+            $default_settings['name'] = 'Default Settings';
+            if (false !== sp_add_row($sw_global->table_name, $default_settings))
                 delete_option('stock_widget_default_settings');
-            }
+
+        case '1.4':
+            stock_widget_create_db_table();
             
             //*****************************************************
             //this will always be right above sw_global->current_version case
@@ -266,7 +262,7 @@ HEREDOC;
 HEREDOC;
     echo do_shortcode('[stock-widget]');
     echo <<<HEREDOC
-                           <p>To preview your latest changes to settings, you must first save changes.</p>
+                           <p>To preview your latest changes you must first save changes.</p>
                         </div>
                     </div>
                 </div>
