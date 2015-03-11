@@ -1,6 +1,5 @@
 <?php
 namespace stockWidget;
-//define('RELEVAD_PLUGIN_UTILS', true, false); //flag for whether this file was already included anywhere
 
 //helper function for all min/max integers
 function relevad_plugin_validate_integer($new_val, $min_val, $max_val, $default) {
@@ -58,26 +57,74 @@ function relevad_plugin_add_menu_section() {
 }
 
 function relevad_plugin_welcome_screen() {
+    global $relevad_plugins;
+    if (empty($relevad_plugins)) // depricated code
+        $relevad_plugins = array(); 
+    
+    $output = "";
+    $all_names = array(); //for backwards compatibility
+    foreach ($relevad_plugins as $plugin) {
+        $url  = $plugin['url'];
+        $name = $plugin['name'];
+        $output .= "<li><a href='{$url}'>{$name}</a></li>";
+        $all_names[] = $name; //used for javascript to show plugins that AREN'T yet installed
+    }
+    
+    //Depricated code, leaving for backwards compat (incase 1 plugin updated but the others are not)
+    $active_plugins = get_option('active_plugins');
+    if ( !in_array('Custom Stock Ticker', $all_names) && in_array('custom-stock-ticker/stock_ticker_admin.php', $active_plugins)) {
+        $output .= "<li><a href='/wp-admin/admin.php?page=stock_ticker_list'>Custom Stock Ticker</a></li>";
+        $all_names[] = 'Custom Stock Ticker';
+    }
+    if ( !in_array('Custom Stock Widget', $all_names) && in_array('custom-stock-widget/stock_widget_admin.php', $active_plugins)) {
+        $output .= "<li><a href='/wp-admin/admin.php?page=stock_widget_list'>Custom Stock Widget</a></li>";
+        $all_names[] = 'Custom Stock Widget';
+    }
+    if ( !in_array('Fit My Sidebar', $all_names) && in_array('fit-my-sidebar/fit-my-sidebar.php', $active_plugins)) {
+        $output .= "<li><a href='/wp-admin/admin.php?page=fms_admin_config'>Fit My Sidebar</a></li>";
+        $all_names[] = 'Fit My Sidebar';
+    }
+    
+    $temp = implode(',', $all_names);
     echo <<<HEREDOC
 <div id="sp-options-page">
 
+    <style type="text/css">
+        #relevad-plugins-list li {width:25%; min-width:150px; max-width:200px; text-align:center; border:1px solid black; min-height:160px; padding:10px; margin:10px; background-color:white; display:inline-block; vertical-align:top;}
+        #relevad-plugins-list li:hover {background-color:#f9f9f9;}
+        #relevad-plugins-list li a {text-decoration:none;}
+        #relevad-plugins-list li a h3:hover {text-decoration:underline;}
+        #relevad-plugins-active-list li, #relevad-plugins-follow li {margin-left:10px;}
+        #relevad-plugins-follow a img {margin-top:5px}
+    </style>
+
     <h1>Relevad Plugins</h1>
-    <p>The following plugins by Relevad are active.</p>
-    <ul>
-HEREDOC;
     
-    $active_plugins = get_option('active_plugins');
-    if ( in_array('custom-stock-ticker/stock_ticker_admin.php', $active_plugins)) {
-        echo "<li><a href='/wp-admin/admin.php?page=stock_ticker_admin'>Custom Stock Ticker</a></li>";
-    }
-    if ( in_array('custom-stock-widget/stock_widget_admin.php', $active_plugins)) {
-        echo "<li><a href='/wp-admin/admin.php?page=stock_widget_admin'>Custom Stock Widget</a></li>";
-    }
-    if ( in_array('fit-my-sidebar/fit-my-sidebar.php', $active_plugins)) {
-        echo "<li><a href='/wp-admin/admin.php?page=fms_admin_config'>Fit My Sidebar</a></li>";
-    }
-    echo <<<HEREDOC
+    <h2>Currently Active</h2>
+    <ul id="relevad-plugins-active-list">
+    {$output}
     </ul>
+    
+    <script type="text/javascript">
+        var skip = "{$temp}";
+    </script>
+    <div id="other_rele_plugins" style="display:none;">
+        <h2>Other Relevad Plugins</h2>
+        <ul id="relevad-plugins-list"></ul>
+    </div><!-- relevad-plugin-list generated here -->
+    <script type="text/javascript" src="http://relevad.com/wp-plugins/welcomepage.js"></script>
+    
+    <br>
+    <h2>Follow Us</h2>
+    <ul id="relevad-plugins-follow">
+        <li><a href="https://www.facebook.com/relevad"><img alt="Relevad on Facebook" src="http://relevad.com/img/social/fb20.png"></a> &nbsp; 
+            <a href="https://plus.google.com/+Relevad-Corp"><img alt="Relevad on Google Plus" src="http://relevad.com/img/social/gp20.png"></a> &nbsp; 
+            <a href="https://twitter.com/relevad"><img alt="Relevad on Twitter" src="http://relevad.com/img/social/t20.png"></a> &nbsp; 
+        </li>
+        <li><a href="http://relevad.com/wp-plugins/">Relevad Plugins</a></li>
+        <li><a href="https://profiles.wordpress.org/Relevad/#content-plugins">Relevad on Wordpress.org</a></li>
+    </ul>
+    
 </div><!-- end options page -->
 HEREDOC;
 }

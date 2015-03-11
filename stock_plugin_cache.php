@@ -1,8 +1,6 @@
 <?php
 namespace stockWidget;
 
-//define('STOCK_PLUGIN_CACHE', true, false); //flag for whether this file was already included anywhere
-
 //The cache returns a string of the data elements separated by commas. This funciton
 //Splits the string by the commas, removes any single quote marks('), and returns
 //an array of the elements with the appropriate keys. 

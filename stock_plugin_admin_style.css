@@ -11,7 +11,7 @@
     height: 30px;
 }
 
-#sp-warning {
+.sp-warning {
     color: red;
 }
 
@@ -45,6 +45,13 @@
     font-size: 14px;
     text-align: center;
     width: 60px; /*default*/
+}
+
+#sp-options-page input.shortcode_name {
+    font-size: 1em;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 10px;
 }
 
 #sp-cat-stocks-div input {
@@ -116,5 +123,41 @@ h3.hndle {
 }
 
 input.color_input{
-	padding: 2px;
+    padding: 2px;
+}
+
+
+#sp-list-table-page input.shortcode {
+    width: 400px;
+    text-align: center;
+}
+
+#sp-list-table-page input.stocklist {
+    width: 100%;
+}
+
+/*#sp-list-table-page .column-cb { 
+width:2%; 
+}*/
+
+#sp-list-table-page .relevad-plugins_page_stock_widget_list {
+min-width: 1080px;
+}
+#sp-list-table-page .column-name { 
+width:200px;
+/*max-width: doesnt work
+min-width: */
+}
+#sp-list-table-page .column-height, #sp-list-table-page .column-width { 
+width:80px; 
+}
+#sp-list-table-page .column-display_number { 
+width:50px; 
+}
+#sp-list-table-page .column-shortcode { 
+width:400px; 
+}
+
+label[for=shortcode-hide] {
+    display:none;
 }

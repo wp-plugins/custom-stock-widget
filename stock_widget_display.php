@@ -3,11 +3,11 @@ namespace stockWidget;
 
 //NOTE: so long as plugin is activated, these will be included regardless of whether the shortcode is on the page
 function stock_widget_scripts_enqueue($force = false) {
-    global $sw_global;
+    $current_version = SP_CURRENT_VERSION;
 
     if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
-    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $sw_global->current_version);
+    wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $current_version);
 
     wp_enqueue_style ('stock_widget_style');
 
@@ -22,122 +22,110 @@ add_shortcode('stock-widget', NS.'stock_widget');
 
 
 function stock_widget($atts) {
-    global $sw_global;
     
     stock_widget_handle_update();
     
+    extract( shortcode_atts( array(
+        'name'              => 'Default Settings'
+    ), $atts ) );
+
+    $shortcode_settings = sp_get_row($name);
+
+    if ($shortcode_settings === null) {
+        return "<!-- WARNING: no shortcode exists with name '{$name}' -->";
+    }
     $output = "";
     
-    //NOTE: skipping attributes, because first priority is to get the stock list, if that doesn't exist, nothing else matters.
-    $per_category_stock_lists = get_option('stock_widget_per_category_stock_lists', array()); //default just in case its missing for some reason
-    if (empty($per_category_stock_lists)) {
-            return "<!-- WARNING: no stock list found in wp_options, check settings, or reinstall plugin -->";
-    }
-    
-    //FIND the categories of the current page
-    $category_ids = array(); //effectively for use on homepage & admin pages only
-    if (!is_admin() && !is_home()) {
-        if (is_category()) { 
-            $tmp = get_queried_object(); //gets the WP_query object for this page
-            if (is_object($tmp)) {
-                $category_ids[] = $tmp->term_id;
+    if ($name === 'Default Settings' || $shortcode_settings['stock_list'] === '') {
+        //NOTE: skipping attributes, because first priority is to get the stock list, if that doesn't exist, nothing else matters.
+        $per_category_stock_lists = get_option('stock_widget_per_category_stock_lists', array()); //default just in case its missing for some reason
+        if (empty($per_category_stock_lists)) {
+                return "<!-- WARNING: no stock list found in wp_options, check settings, or reinstall plugin -->";
+        }
+        
+        //FIND the categories of the current page
+        $category_ids = array(); //effectively for use on homepage & admin pages only
+        if (!is_admin() && !is_home()) {
+            if (is_category()) { 
+                $tmp = get_queried_object(); //gets the WP_query object for this page
+                if (is_object($tmp)) {
+                    $category_ids[] = $tmp->term_id;
+                }
             }
+            else {
+                $tmp = get_the_category(); //get the list of all category objects for this post
+                foreach ($tmp as $cat) {
+                    $category_ids[] = $cat->term_id;
+                }
+            }
+        }
+        //NOTE: $cat = get_query_var('cat');  DOES NOT WORK!
+        
+        $stock_list = array();  //stripping spaces again out of paranoia
+        $default_stock_list = explode(',', str_replace(' ', '', $per_category_stock_lists['default']));  //REM: returns a string
+        
+        if (empty($category_ids)) {
+            $stock_list = $default_stock_list;
+            $cats_used  = 'default';
         }
         else {
-            $tmp = get_the_category(); //get the list of all category objects for this post
-            foreach ($tmp as $cat) {
-                $category_ids[] = $cat->term_id;
+            //$cats_used = '';
+            foreach ($category_ids as $cat) { //merge multiple stock lists together if post is in multiple categories
+                $stocks_arr = (array_key_exists($cat, $per_category_stock_lists) && !empty($per_category_stock_lists[$cat]) ? explode(',', $per_category_stock_lists[$cat]) : array() );
+                $stock_list = array_merge($stocks_arr, $stock_list); //REM: take a unique later
             }
+            if (empty($stock_list)) {
+                $stock_list = $default_stock_list;
+            }
+            $cats_used = "for category: " . implode(',', $category_ids);
         }
-    }
-    //NOTE: $cat = get_query_var('cat');  DOES NOT WORK!
-    
-    $stock_list = array();  //stripping spaces again out of paranoia
-    $default_stock_list = explode(',', str_replace(' ', '', $per_category_stock_lists['default']));  //REM: returns a string
-    
-    if (empty($category_ids)) {
-        $stock_list = $default_stock_list;
-        $cats_used  = 'default';
+        
+
     }
     else {
-        $cats_used = '';
-        foreach ($category_ids as $cat) { //merge multiple stock lists together if post is in multiple categories
-            $stocks_arr = (array_key_exists($cat, $per_category_stock_lists) && !empty($per_category_stock_lists[$cat]) ? explode(',', $per_category_stock_lists[$cat]) : array() );
-            $stock_list = array_merge($stocks_arr, $stock_list); //REM: take a unique later
-        }
-        if (empty($stock_list)) {
-            $stock_list = $default_stock_list;
-        }
-        $cats_used .= implode(',', $category_ids);
+        $stock_list = explode(',', $shortcode_settings['stock_list']);
+        $cats_used = "";
     }
-    
+
     $tmp = stock_plugin_get_data(array_unique($stock_list)); //from stock_plugin_cache.php, expects an array or string | separated
     $stock_data_list = array_values($tmp['valid_stocks']);   //NOTE: its ok to throw away the keys, they aren't used anywhere
     
     if (empty($stock_data_list)) {
-        return "<!-- WARNING: no stock list found for category: {$cats_used} -->";  //don't fail completely silently
+        return "<!-- WARNING: no stock list found {$cats_used} -->";  //don't fail completely silently
     }
 
-    
-    $sw_ds = sp_get_row($sw_global->table_name, 'Default Settings');
-
-    extract( shortcode_atts( array(  //we can use nulls for this, since defaults are part of the validation
-        'id'                => '0',
-        'display'           => null,
-        'height'            => null,
-        'width'             => null,
-        'background_color1' => null, //kept for backwards compat
-        'background_color2' => null,
-        'bgcolor1'          => null, //new shorter version
-        'bgcolor2'          => null,
-        'text_color'        => null,
-        'change_style'      => null
-    ), $atts ) );
-    if ($bgcolor1 == null) { $bgcolor1 = $background_color1; } //always use bgcolor# instead of background_color if available
-    if ($bgcolor2 == null) { $bgcolor2 = $background_color2; }
-    
-    //**********validation section***********
-    //NOTE: for validation, if option supplied was invalid, use the "global" setting
-    $width          = relevad_plugin_validate_integer($width,  $sw_global->validation_params['width'][0],  $sw_global->validation_params['width'][1],  $sw_ds['width']);
-    $height         = relevad_plugin_validate_integer($height, $sw_global->validation_params['height'][0], $sw_global->validation_params['height'][1], $sw_ds['height']);
-    
-    $text_color     = relevad_plugin_validate_color($text_color, $sw_ds['font_color']);
-    $bgcolor1       = relevad_plugin_validate_color($bgcolor1,   $sw_ds['bg_color1']);
-    $bgcolor2       = relevad_plugin_validate_color($bgcolor2,   $sw_ds['bg_color2']);
-    
-    if ($change_style != null) {
-        $change_style = ucwords($change_style);
-        if (! in_array($change_style, $sw_global->validation_params['change_styles']) ) {
-            $change_style = 'None';
-        }
-    }
-    
-    $num_to_display = relevad_plugin_validate_integer($display, $sw_global->validation_params['max_display'][0],  $sw_global->validation_params['max_display'][1],  $sw_ds['display_number']);
-    //***********DONE validation*************
-    $num_to_display = min(count($stock_data_list), $num_to_display);
+    $num_to_display = min(count($stock_data_list), $shortcode_settings['display_number']);
     $bonus_header = 0;
-    if ($sw_ds['show_header']) {
+    if ($shortcode_settings['show_header']) {
         $bonus_header = 1; //add 1 row for the header
     }
     
-    $output .= stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display + $bonus_header);
-    $output .=      stock_widget_create_table($id, $sw_ds, $stock_data_list, $num_to_display);
+    $output .= stock_widget_create_css_header($shortcode_settings, $num_to_display + $bonus_header);
+    $output .=      stock_widget_create_table($shortcode_settings, $stock_data_list, $num_to_display);
     return $output;
 }
 
 //Creates the internal style sheet for all of the various elements.
-function stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_color, $bgcolor1, $bgcolor2, $num_to_display) {
+function stock_widget_create_css_header($shortcode_settings, $num_to_display) {
 
-        $number_of_elements = array_sum($sw_ds['data_display']);
-
+        $number_of_elements = array_sum($shortcode_settings['data_display']);
+        
         //variables to be used inside the heredoc
+        $id             = $shortcode_settings['id']; //we don't want to use the name because it might have spaces
+        $width          = $shortcode_settings['width'];
+        $height         = $shortcode_settings['height'];
+        $text_color     = $shortcode_settings['font_color'];
+        $bgcolor1       = $shortcode_settings['bg_color1'];
+        $bgcolor2       = $shortcode_settings['bg_color2'];
+        //$num_to_display = $shortcode_settings['display_number']; // need to pass in for the header
+
         //NOTE: rows are an individual stock with multiple elements
         //NOTE: elements are pieces of a row, EX.  widget_name & price are each elements
         $element_width = round($width  / $number_of_elements, 0, PHP_ROUND_HALF_DOWN);
         $row_height    = round($height / $num_to_display,     0, PHP_ROUND_HALF_DOWN);
         
         //section for box outline around changed values (if chosen)
-        $change_box_height     = $sw_ds['font_size'] + 4; //add 4 pixels to the font size
+        $change_box_height     = $shortcode_settings['font_size'] + 4; //add 4 pixels to the font size
         $change_box_width      = round($element_width * 0.7,                             0, PHP_ROUND_HALF_DOWN);
         $change_box_margin_top = round(($row_height / 2) - ($change_box_height / 2 + 2), 0, PHP_ROUND_HALF_DOWN);
         $change_box_margin_left= round($element_width * 0.15 - 2,                        0, PHP_ROUND_HALF_DOWN);
@@ -155,7 +143,7 @@ function stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_colo
    width:            {$width}px;
    height:           {$height}px;
    line-height:      {$row_height}px;
-   {$sw_ds['advanced_style']}
+   {$shortcode_settings['advanced_style']}
 }
 .stock_widget_{$id} .stock_widget_row {
    width:    {$width}px;
@@ -169,8 +157,8 @@ function stock_widget_create_css_header($id, $sw_ds, $width, $height, $text_colo
    background-color: {$bgcolor2};
 }
 .stock_widget_{$id} .stock_widget_element {
-   font-size:   {$sw_ds['font_size']}px;
-   font-family: {$sw_ds['font_family']},serif;
+   font-size:   {$shortcode_settings['font_size']}px;
+   font-family: {$shortcode_settings['font_family']},serif;
    width:       {$element_width}px;  
 }
 .stock_widget_{$id} .stock_widget_element .sw_box {
@@ -214,22 +202,25 @@ function stock_data_order_test($a, $b) {
 }
 
 
-//function stock_widget_create_table($id, $stock_data_list, $max_stocks, $width, $height, $text_color, $background_color1, $background_color2) {
-function stock_widget_create_table($id, $sw_ds, $stock_data_list, $number_of_stocks) {
+//function stock_widget_create_table($name, $stock_data_list, $max_stocks, $width, $height, $text_color, $background_color1, $background_color2) {
+function stock_widget_create_table($sw_settings, $stock_data_list, $number_of_stocks) {
+    
+    $id = $sw_settings['id']; //we don't want to use the name because it might have spaces
+    
     if ($number_of_stocks == 0) { //some kinda error
         return "<!-- we had no stocks for some reason, stock_data_list empty -->";
     }
     
-    $number_of_elements = array_sum($sw_ds['data_display']); //for each stock row
+    $number_of_elements = array_sum($sw_settings['data_display']); //for each stock row
 
-    switch($sw_ds['display_order']) {  //valid options "Preset", "A-Z", "Z-A", "Random"
+    switch($sw_settings['display_order']) {  //valid options "Preset", "A-Z", "Z-A", "Random"
         case 'Preset':
             break; //do nothing take the data in the order we got it in
         case 'A-Z': 
-            usort($stock_data_list, 'stock_data_order_test');
+            usort($stock_data_list, NS.'stock_data_order_test');
             break;
         case 'Z-A': 
-            usort($stock_data_list, 'stock_data_order_test'); //NOTE: usort works in place
+            usort($stock_data_list, NS.'stock_data_order_test'); //NOTE: usort works in place
             $stock_data_list = array_reverse($stock_data_list); //NOTE: reverse returns copy of array
             break;
         case 'Random':
@@ -241,10 +232,10 @@ function stock_widget_create_table($id, $sw_ds, $stock_data_list, $number_of_sto
     }
     
     $output = "";
-    if ($sw_ds['show_header']) {
+    if ($sw_settings['show_header']) {
         $output .= "<div class='stock_widget_row stock_header'>"; //Feature Improvement: add config for header color
         $column_headers = array("Mrkt", "Syml", "Lst Val", "+/- Val", "+/- %", "Lst Trd"); //Feature Improvement, handle the header text better with sizing, maybe overflow hidden?
-        while ( list($idx, $v) = each($sw_ds['data_display']) ) {
+        while ( list($idx, $v) = each($sw_settings['data_display']) ) {
             if ($v == 1) {
                 $output .= "<div class='stock_widget_element'>" . $column_headers[$idx] . "</div>";
             }
@@ -254,25 +245,25 @@ function stock_widget_create_table($id, $sw_ds, $stock_data_list, $number_of_sto
     
     for ($idx = 0; $idx < $number_of_stocks; $idx++) {
         $stock_data = $stock_data_list[$idx];
-        $output .= stock_widget_create_row($idx, $stock_data, $sw_ds);
+        $output .= stock_widget_create_row($idx, $stock_data, $sw_settings);
     }
     
     return "<div class='stock_table stock_widget_{$id}'>{$output}</div>";
 }
 
-function stock_widget_create_row($idx, $stock_data, $sw_ds) {
+function stock_widget_create_row($idx, $stock_data, $sw_settings) {
     if(empty($stock_data['last_val'])) {
         return "<!-- Last Value did not exist, stock error -->";
     }
     $output = "";
     
     if ($idx != 0) { //special rules for first row
-        if ($sw_ds['draw_horizontal_lines']) {
+        if ($sw_settings['draw_horizontal_lines']) {
             $output .= "<div class='widget_horizontal_dash'></div><!-- \n -->";
         }
     }
     $vertical_line = "";
-    if ($sw_ds['draw_vertical_lines']) {
+    if ($sw_settings['draw_vertical_lines']) {
         $vertical_line = "<div class='stock_widget_vertical_line'></div>";
     }
     $altrow = ($idx % 2 == 1 ? 'altbg' : '');
@@ -281,7 +272,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     //this is for the setting "box" color changing
     $link_wrap_1 = "";
     $link_wrap_2 = "";
-    $link_url = $sw_ds['stock_page_url'];
+    $link_url = $sw_settings['stock_page_url'];
     if ($link_url) {
         $link_url = str_replace('__STOCK__', $stock_data['stock_sym'], $link_url);
         $link_wrap_1 = "<a href='{$link_url}' target='_blank' rel='external nofollow'>";
@@ -290,7 +281,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     $output .= "<div class='stock_widget_row {$altrow}'><!-- \n -->{$link_wrap_1}";
    
     //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
-    $display_options = $sw_ds['data_display'];
+    $display_options = $sw_settings['data_display'];
     
     
     //NOTE: skip market
@@ -324,7 +315,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_ds) {
     }
     
     //$widget_change_style = get_option('stock_widget_change_style');
-    $widget_change_style = $sw_ds['change_style'];
+    $widget_change_style = $sw_settings['change_style'];
     if ($widget_change_style == 'Box') {
         $wrapper_1 = "<div class='stock_widget_element'><!-- \n --><div class='sw_box {$changer}'>";
         $wrapper_2 = "</div></div>";
