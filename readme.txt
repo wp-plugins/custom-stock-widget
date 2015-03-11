@@ -1,6 +1,6 @@
 === Custom Stock Widget ===
 Contributors: Relevad
-Tags: stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
+Tags: custom stock widget, stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.1
 Stable tag: 1.4.1
