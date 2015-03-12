@@ -73,15 +73,15 @@ function relevad_plugin_welcome_screen() {
     //Depricated code, leaving for backwards compat (incase 1 plugin updated but the others are not)
     $active_plugins = get_option('active_plugins');
     if ( !in_array('Custom Stock Ticker', $all_names) && in_array('custom-stock-ticker/stock_ticker_admin.php', $active_plugins)) {
-        $output .= "<li><a href='/wp-admin/admin.php?page=stock_ticker_list'>Custom Stock Ticker</a></li>";
+        $output .= "<li><a href='".admin_url("admin.php?page=stock_ticker_list")."'>Custom Stock Ticker</a></li>";
         $all_names[] = 'Custom Stock Ticker';
     }
     if ( !in_array('Custom Stock Widget', $all_names) && in_array('custom-stock-widget/stock_widget_admin.php', $active_plugins)) {
-        $output .= "<li><a href='/wp-admin/admin.php?page=stock_widget_list'>Custom Stock Widget</a></li>";
+        $output .= "<li><a href='".admin_url("admin.php?page=stock_widget_list")."'>Custom Stock Widget</a></li>";
         $all_names[] = 'Custom Stock Widget';
     }
     if ( !in_array('Fit My Sidebar', $all_names) && in_array('fit-my-sidebar/fit-my-sidebar.php', $active_plugins)) {
-        $output .= "<li><a href='/wp-admin/admin.php?page=fms_admin_config'>Fit My Sidebar</a></li>";
+        $output .= "<li><a href='".admin_url("admin.php?page=fms_admin_config")."'>Fit My Sidebar</a></li>";
         $all_names[] = 'Fit My Sidebar';
     }
     

@@ -102,8 +102,6 @@ function stock_plugin_validate_stock_list($the_stock_list) {
 
 function stock_plugin_update_per_category_stock_lists() { 
     $plugin_type = SP_TYPE; //plugin_type = widget/ticker
-    
-    //Known Issue: fix: g"G'g'fg'fg'fg'df'gdf    invalid input strings sanitize
 
     //Start with what is already in the database, so that we don't erase what is there in the case where categories get removed then added back in later
     $per_category_stock_lists  = get_option("stock_{$plugin_type}_per_category_stock_lists", array()); //defaults to empty array
