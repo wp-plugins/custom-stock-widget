@@ -118,7 +118,7 @@ function stock_widget_activate() {
         $values = array( //NOTE: the rest should all be the defaults
                         'name'           => 'Default Settings',
                         'advanced_style' => 'margin: auto;',
-                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK__'
                         );
         sp_add_row($values);
         add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL'));
@@ -282,7 +282,7 @@ function stock_widget_addnew() { //default name is the untitled_id#
     $values = array( //NOTE: the rest should all be the defaults
                         //'name'           => 'Default Settings', //no name to start with, have to do an update after
                         'advanced_style' => 'margin: auto;',
-                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK__'
                         );
     $new_id = sp_add_row($values);
     
@@ -560,11 +560,11 @@ function stock_widget_templates() { //helper function to avoid global variables
             'draw_vertical_lines'   => false, 
             'change_style'          => 'None'),
         'Minimal' => array(
-            'name'                  => 'Minimal (black on transparent)', 
+            'name'                  => 'Minimal (black on white)', 
             'font_family'           => 'Arial', 
             'font_color'            => '#000000', 
-            'bg_color1'             => 'transparent', 
-            'bg_color2'             => 'transparent', 
+            'bg_color1'             => '#FFFFFF', 
+            'bg_color2'             => '#FFFFFF', 
             'draw_horizontal_lines' => true, 
             'draw_vertical_lines'   => false, 
             'change_style'          => 'Parentheses'),
