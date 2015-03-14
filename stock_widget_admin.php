@@ -118,7 +118,7 @@ function stock_widget_activate() {
         $values = array( //NOTE: the rest should all be the defaults
                         'name'           => 'Default Settings',
                         'advanced_style' => 'margin: auto;',
-                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK__'
                         );
         sp_add_row($values);
         add_option('stock_widget_per_category_stock_lists', array('default' => 'GOOG,YHOO,AAPL'));
@@ -282,7 +282,7 @@ function stock_widget_addnew() { //default name is the untitled_id#
     $values = array( //NOTE: the rest should all be the defaults
                         //'name'           => 'Default Settings', //no name to start with, have to do an update after
                         'advanced_style' => 'margin: auto;',
-                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK_'
+                        'stock_page_url' => 'https://www.google.com/finance?q=__STOCK__'
                         );
     $new_id = sp_add_row($values);
     
