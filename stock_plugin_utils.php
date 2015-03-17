@@ -249,7 +249,7 @@ function sp_add_row($values) {
         $values['data_display'] = convert_data_display($values['data_display']);
     }
     
-    unset($values['id']); //remove if it exists
+    //unset($values['id']); //We need to be able to set this upon initial activation
     if (!isset($values['name'])) {
         $new_id = sp_get_next_row_id();
         $values['name'] = "(untitled) {$new_id}";
