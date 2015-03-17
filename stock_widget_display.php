@@ -312,6 +312,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
         $changer = "sw_red";
     } else {
         $data_item = "+{$data_item}.00";
+        $changer = "";
     }
     
     //$widget_change_style = get_option('stock_widget_change_style');
