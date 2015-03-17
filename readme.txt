@@ -25,6 +25,9 @@ Features:
  * Custom stocks for specific categories
  * Preview of custom stock widget after saving on settings page
 
+Depricated support for pre-defined html colors:
+ * Color strings such as blue, yellow, limegreen could be used in old version of this plugin. These are no longer supported and may be lost upon saving settings.
+
 Requirements:
 
  * PHP version >= 5.3.0 (Dependent on 5.3 functionality. Plugin will not work without 5.3 or higher)

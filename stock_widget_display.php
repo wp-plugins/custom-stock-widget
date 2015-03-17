@@ -253,7 +253,7 @@ function stock_widget_create_table($sw_settings, $stock_data_list, $number_of_st
 
 function stock_widget_create_row($idx, $stock_data, $sw_settings) {
     if(empty($stock_data['last_val'])) {
-        return "<!-- Last Value did not exist, stock error -->";
+        return "<!-- Last Value did not exist, stock error ({$stock_data['stock_sym']})-->";
     }
     $output = "";
     
@@ -297,14 +297,14 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
 
     if ($display_options[2] == 1) {
         $data_item = $stock_data['last_val'];
-        $data_item = round($data_item, 2);
+        $data_item = round($data_item, 3); //yahoo gives 3 decimal places precision
         $output   .= "<div class='stock_widget_element'>{$data_item}</div>{$vertical_line}<!-- \n -->";
     }
 
     ///////////////////// common section ////////////////
     //NOTE: this exists outside of sections because the color changing effect applies to both field 3 and 4
     $data_item = $stock_data['change_val'];
-    $data_item = round($data_item, 2);
+    $data_item = round($data_item, 3);
     if ($data_item > 0) {
         $changer   = "sw_green";
         $data_item = "+{$data_item}";
@@ -339,7 +339,7 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
     if ($display_options[4] == 1) {
         $data_item = $stock_data['change_percent'];
         $data_item = str_replace('%', '', $data_item);
-        $data_item = round($data_item, 2);
+        $data_item = round($data_item, 3);
         
         if ($data_item > 0) {          
             $data_item = "+{$data_item}%";
