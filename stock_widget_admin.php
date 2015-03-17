@@ -164,6 +164,7 @@ function stock_widget_handle_update() {
             if ($default_settings !== false) {
                 unset($default_settings['show_headers']); //if this exists get rid of it
                 $default_settings['name'] = 'Default Settings';
+                $default_settings['id']   = 1; //force the ID to be 1
                 if (false !== sp_add_row($default_settings))
                     delete_option('stock_widget_default_settings');
             }
