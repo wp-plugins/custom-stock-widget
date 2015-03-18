@@ -70,3 +70,8 @@ function toggleSection(sectionToToggle) {
         document.cookie = sectionToToggle + "=block";      //user clicked a section for the first time, it is now uncollapsed
     }
 }
+
+function fadeNotification() {
+    // jQuery('.updated').delay(5000).animate({height:'hide', marginTop:'hide', marginBottom:'hide'}, 1000)   // slides notifacation up, I dont like how this looks
+    jQuery('.updated').delay(5000).fadeTo(1000,0) // fades notification out
+}

@@ -423,7 +423,7 @@ function stock_widget_admin_page($id = '') {
     }
     
     $reset_btn    = "Revert Changes";
-    $reset_notice = "";
+    $reset_notice = "<a class='submitdelete' href='?page=stock_widget_list&action=delete&shortcode={$id}' onclick='return showNotice.warn()'>Delete Permenantly</a>";
     if ($ds_flag) {
         $reset_btn    = "Reset to Defaults";
         $reset_notice = "<sup>*</sup><br /><sup>* NOTE: 'Reset to Defaults' also clears all default stock lists.</sup>";
@@ -482,9 +482,11 @@ HEREDOC;
             </div>
                 </div><!--end referrers -->
             </div>
-            <input type='submit' name='save_changes'  value='Save Changes' class='button-primary' />
-            <input type='submit' name='reset_options' value='{$reset_btn}' class='button-primary' />
-            {$reset_notice}
+            <div id='publishing-actions'>
+                <input type='submit' name='save_changes'  value='Save Changes' class='button-primary' />
+                <input type='submit' name='reset_options' value='{$reset_btn}' class='button-primary' />
+                {$reset_notice}
+            </div>
         </div>
     
         <div id='sp-cat-stocks-div' class='postbox-container sp-options'>

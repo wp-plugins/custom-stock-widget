@@ -5,6 +5,7 @@ namespace stockWidget;
 
 function stock_plugin_notice_helper($text, $type = 'updated') {
     echo "<div class='{$type}'><p>{$text}</p></div>";
+    echo "<script type='text/javascript'>fadeNotification();</script>";
 }
 
 function stock_plugin_create_stock_list_input($id, $stocks_string) { //this is a helper function for stock_plugin_create_per_category_stock_lists()
@@ -475,7 +476,7 @@ class stock_shortcode_List_Table extends \WP_List_Table {
             'edit'      => sprintf('<a href="?page=%s&action=%s&shortcode=%s">Edit</a>',  $_REQUEST['page'],'edit',  $item['id']),
       );
       if ($item['id'] != '1') { //skip default settings
-          $actions['delete'] = sprintf('<a href="?page=%s&action=%s&shortcode=%s">Delete</a>',$_REQUEST['page'],'delete',$item['id']); //needs a nonce? hopefully not necessary
+          $actions['delete'] = sprintf('<a href="?page=%s&action=%s&shortcode=%s"onclick="return showNotice.warn()">Delete</a>',$_REQUEST['page'],'delete',$item['id']); //needs a nonce? hopefully not necessary
       }
 
       return sprintf('%1$s %2$s', $item['name'], $this->row_actions($actions) );

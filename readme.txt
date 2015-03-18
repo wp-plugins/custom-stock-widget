@@ -115,11 +115,13 @@ find this plugin on wordpress.org and contact us through the support tab.
 
 3. More examples of stock table widget themes
 
-4. This is what the back-end looks like
+4. Here is where you can manage multiple separate widgets
 
-5. Here's how to place the Custom Stock Widget on the site using a PHP Code Widget
+5. This is what the back-end looks like
 
-6. Here's how to place the Custom Stock Widget inside a page using shortcode
+6. Here's how to place the Custom Stock Widget on the site using a PHP Code Widget
+
+7. Here's how to place the Custom Stock Widget inside a page using shortcode
 
 
 == Changelog ==
