@@ -4,7 +4,7 @@
     Plugin URI: http://relevad.com/wp-plugins/
     Description: Create customizable stock data table widgets that can be placed anywhere on a site using shortcodes.
     Author: Relevad
-    Version: 2.0.1
+    Version: 2.1
     Author URI: http://relevad.com/
 
 */
@@ -47,7 +47,7 @@ $relevad_plugins[] = array(
 define(NS.'SP_TABLE_NAME', $wpdb->prefix . 'stock_widgets');
 define(NS.'SP_CHARSET',    $wpdb->get_charset_collate()); //requires WP v3.5
 
-define(NS.'SP_CURRENT_VERSION', '2.0.1');   //NOTE: should always match Version: ### in the plugin special comment
+define(NS.'SP_CURRENT_VERSION', '2.1');   //NOTE: should always match Version: ### in the plugin special comment
 define(NS.'SP_TYPE', 'widget');
 define(NS.'SP_VALIDATION_PARAMS', <<< DEFINE
 {
@@ -177,6 +177,7 @@ function stock_widget_handle_update() {
             
         case '1.4.1':
 	case '2.0':
+        case '2.0.1':
             //*****************************************************
             //this will always be right above current_version case
             //keep these 2 updates paired
