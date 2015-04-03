@@ -4,7 +4,7 @@ Contributors: Relevad
 Tags: custom stock widget, stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.1.1
-Stable tag: 2.0.1
+Stable tag: 2.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,10 @@ find this plugin on wordpress.org and contact us through the support tab.
 
 == Changelog ==
 
+= 2.1 =
+
+* Added a delete confirmation prompt before actually deleting a shortcode
+
 = 2.0.1 =
 
 * Changed precision to 3 decimal places up from 2
@@ -197,6 +201,7 @@ Plugin released.
 
 == Upgrade Notice ==
 
-= 1.4.1 =
+= 2.0 =
 
 Major functionality upgrade. Update now to be able to define multiple shortcodes with independent stock lists for each.
+
