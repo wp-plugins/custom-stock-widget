@@ -1,56 +1,39 @@
-.stock_table {
-    margin:  0px;
-    padding: 0px;
-    border-radius: 4px;
-    overflow: hidden;
-}
+.stock_table {margin:0px;padding:0px;}/* I don't think this does anything anymore */
 
-.stock_widget_row.stock_header {
-    background-color: silver !important; 
+table.dataTable thead th,table.dataTable thead td {padding: 5px 0px;} /* reset default padding */
+table.dataTable thead th:first-child,table.dataTable thead td:first-child {padding-left: 5px;}
+table.dataTable thead th:last-child,table.dataTable thead td:last-child {padding-right: 5px;}
 
-}
-.stock_widget_row.stock_header div {
-    color: black !important;
-}
-.stock_widget_element {
-    text-align: center;
-    height: 100%;
-    float:  left;
-}
+.stock_widget_element {text-align: center;}
+.stock_widget_element a{text-decoration: none;} /*styled links inside the table look weird*/
+table.dataTable tbody th,table.dataTable tbody td {line-height:1em;} /*min height of cells = font size : look mom no overlap! */
 
-.stock_widget_vertical_line {
-    background-color: #D7D7D7;
-    margin-left: -2px;
-    opacity: 0.4;
-    width:   2px;
-    float:   left;
-}
+/* auto text color */
+.stock_table td.stock_widget_element.cell_sw_red_big   {color: #330000;}
+.stock_table td.stock_widget_element.cell_sw_red_med   {color: #550000;}
+.stock_table td.stock_widget_element.cell_sw_red_sml   {color: #770000;}
+.stock_table td.stock_widget_element.cell_sw_green_big {color: #003300;}
+.stock_table td.stock_widget_element.cell_sw_green_med {color: #005500;}
+.stock_table td.stock_widget_element.cell_sw_green_sml {color: #007700;}
+.stock_table td.stock_widget_element.cell_sw_gray      {color: #222222;}
 
-.widget_horizontal_dash {
-    background-color: #D7D7D7;
-    opacity: 0.6;
-    height:  2px;
-    z-index: 5;
-}
-.stock_table .stock_widget_element.sw_red {
-   color: red;
-}
-.stock_table .stock_widget_element.sw_green {
-   color: green;
-}
-.stock_table .stock_widget_element .sw_box {
-   border:           2px solid #7A7A7A;
-   border-radius:    4px;
-   background-color: gray;
-}
-.stock_table .stock_widget_element .sw_box.sw_red {
-   border:           2px solid #990000;
-   background-color: red;
-}
-.stock_table .stock_widget_element .sw_box.sw_green {
-   border:           2px solid #006800;
-   background-color: green;
-}
-.stock_table .stock_widget_vertical_line:last-child {
-   display: none;
+/* auto bg color */
+.stock_table tr.stock_widget_row.row_sw_red_big, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_red_big:hover{background-color: #FF8888;}    
+.stock_table tr.stock_widget_row.row_sw_red_med, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_red_med:hover{background-color: #FFAAAA;}    
+.stock_table tr.stock_widget_row.row_sw_red_sml, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_red_sml:hover{background-color: #DDAAAA;}
+.stock_table tr.stock_widget_row.row_sw_green_big, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_green_big:hover{background-color: #22AA22;}
+.stock_table tr.stock_widget_row.row_sw_green_med, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_green_med:hover{background-color: #44BB44;}
+.stock_table tr.stock_widget_row.row_sw_green_sml, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_green_sml:hover{background-color: #77CC77;}
+.stock_table tr.stock_widget_row.row_sw_gray, .dataTables_wrapper table.dataTable.hover tbody tr.stock_widget_row.row_sw_gray:hover{background-color: #AAAAAA;}
+
+.stock_table .sw_hidden { display: none;}
+
+/* Hover fx on light backgrounds - filter:brightness */
+/* Hover fx on dark backgrounds  - filter:opacity    */
+/* Use both b/c we don't know if the background will be light or dark and it doesn't hurt */
+table.dataTable.hover tbody tr:hover,table.dataTable.display tbody tr:hover,
+table.dataTable.hover tbody tr.odd:hover,table.dataTable.display tbody tr.odd:hover,
+table.dataTable.hover tbody tr.even:hover,table.dataTable.display tbody tr.even:hover {
+    filter: brightness(95%); -webkit-filter: brightness(95%);
+    filter: opacity(0.9);    -webkit-filter: opacity(0.9);
 }

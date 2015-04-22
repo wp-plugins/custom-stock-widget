@@ -11,9 +11,8 @@
     height: 30px;
 }
 
-.sp-warning {
-    color: red;
-}
+.sp-warning {color: red;}
+.sp-notice {color: #ffba00;}
 
 #sp-options-page {
     width: 850px;
@@ -44,7 +43,7 @@
 #sp-options-page input.itxt {
     font-size: 14px;
     text-align: center;
-    width: 60px; /*default*/
+    width: 100px;
 }
 
 #sp-options-page input.shortcode_name {
@@ -59,18 +58,12 @@
     text-align: left;
 }
 
-.sp-options td {
-    vertical-align: top;
-}
 .sp-options input {
-    /*font-size: smaller !important;*/
     text-align:left;
-    margin-right:3px;
-    margin-bottom:3px;
+    margin: 4px;
     padding:6px 10px;
 }
 #sp-options-page .sp-options select {
-    /*font-size:smaller;*/
     text-align:left;
     width:150px;
 }
@@ -78,8 +71,11 @@
     margin-right:2px;
     white-space: nowrap;
 }
-.sp-options td:first-child {
-    font-weight:bold;
+
+.section-options-display {
+    margin-top: 2px;
+    padding-top: 5px;
+    border-top: 1px solid #ccccff;
 }
 .sp-options-subsection {
     border: 1px solid #ccccff;
@@ -93,23 +89,30 @@
     padding-bottom: 0px;
     display:inline-block;
 }
-h3.hndle {
-    margin: 0 10px;
-    padding: 2px 0;
-}
-.sp-options table {
-    width:100%;
-}
-.sp-options td:nth-child(1) {width:60px;}
-.sp-options td:nth-child(2) {width:5px;}
+h3.hndle {margin: 0 10px;padding: 2px 0;}
+
+.sp-options table {width:100%;}
 .sp-options .admin-stock-choices {
     text-align:left;
     width:100%;
 }
 
-.sp-options-subsection .section-options-display{
-    margin-bottom:1px;
-} 
+.sp-options-subsection .section-options-display{margin-bottom:1px;} 
+
+.sp-options-subsection td:first-child {
+    text-align: center;
+    width: 100px;
+    padding-right:10px;
+}
+
+/* this is specifically referring to the 3rd column, 'is default sort' on the Display Config */
+.sp-options-subsection #widgetsec\[3\] + .section-options-display td:nth-child(3) {text-align:center;}
+
+
+.sp-options-subsection table {border-collapse: collapse;}
+.sp-options-subsection tr td {padding: 4px;}
+tr.border-top {border-top: 1px solid lightgray;}
+
 .sp-options-subsection .section_toggle, #sp-cat-stocks-div .section_toggle{
     cursor:pointer;
     text-align: center;
@@ -122,59 +125,32 @@ h3.hndle {
     display: inline-block;
 }
 
-input.color_input{
-    padding: 2px;
+ a.submitdelete {
+    color:#a00;
+    text-decoration:none;
+    padding:5px;
+    float:right;
 }
 
-
-#sp-list-table-page input.shortcode {
-    width: 400px;
-    text-align: center;
+ #publishing-actions {
+    padding: 10px;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
 }
 
-#sp-list-table-page input.stocklist {
-    width: 100%;
-}
+#sp-options-page #referrers {margin-bottom: 0px;}
+input.color_input{padding: 2px;}
 
-/*#sp-list-table-page .column-cb { 
-width:2%; 
-}*/
+#sp-list-table-page input.shortcode {width: 400px;text-align: center;}
+#sp-list-table-page input.stocklist {width: 100%;}
+#sp-list-table-page .relevad-plugins_page_stock_widget_list {min-width: 1080px;}
+#sp-list-table-page .column-name {width:200px;}
+#sp-list-table-page .column-height, #sp-list-table-page .column-width {width:80px;}
+#sp-list-table-page .column-display_number {width:50px;}
+#sp-list-table-page .column-shortcode {width:400px;}
+label[for=shortcode-hide] {display:none;}
 
-#sp-list-table-page .relevad-plugins_page_stock_widget_list {
-min-width: 1080px;
-}
-#sp-list-table-page .column-name { 
-width:200px;
-/*max-width: doesnt work
-min-width: */
-}
-#sp-list-table-page .column-height, #sp-list-table-page .column-width { 
-width:80px; 
-}
-#sp-list-table-page .column-display_number { 
-width:50px; 
-}
-#sp-list-table-page .column-shortcode { 
-width:400px; 
-}
-
-label[for=shortcode-hide] {
-    display:none;
-}
-
- a.submitdelete{
-color:#a00;
-text-decoration:none;
-padding:5px;
-float:right;
- }
-
- #publishing-actions{
-padding: 10px;
-border: 1px solid #ddd;
-background: #f5f5f5;
- }
- 
- #sp-options-page #referrers {
-    margin-bottom: 0px;
-}
+#layout_radio_buttons{width:100%;}
+#layout_radio_buttons td{text-align:center;width:25%;}
+#sp-options-page input:disabled {opacity:0.2;}
+#sp-options-page label.label_disabled {opacity:0.2;}

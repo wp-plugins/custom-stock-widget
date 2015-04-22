@@ -8,8 +8,11 @@ function stock_widget_scripts_enqueue($force = false) {
     if (is_admin() && !$force) { return; } //skip enqueue on admin pages except for the config page
     
     wp_register_style ('stock_widget_style',  plugins_url('stock_widget_style.css', __FILE__), false, $current_version);
-
+    wp_register_style ('data_tables_style',  '//cdn.datatables.net/1.10.6/css/jquery.dataTables.css', false, '1.10.6'); //TODO - use min version (.min.css)
     wp_enqueue_style ('stock_widget_style');
+    wp_enqueue_style ('data_tables_style');
+    wp_enqueue_script('stock_widget_script', plugins_url('/stock_widget_script.js', __FILE__), array(), null);
+    wp_enqueue_script('jquery.dataTables', '//cdn.datatables.net/1.10.6/js/jquery.dataTables.js', array(), '1.10.6'); // TODO - use min version (.min.js)
 
     if (is_admin()) { return; } //only run this on regular pages
     $feed_tag = ( !array_key_exists('reletime', $_COOKIE)  ? "?ft=customstockwidget" : "");
@@ -94,13 +97,9 @@ function stock_widget($atts) {
         return "<!-- WARNING: no stock list found {$cats_used} -->";  //don't fail completely silently
     }
 
-    $num_to_display = min(count($stock_data_list), $shortcode_settings['display_number']);
-    $bonus_header = 0;
-    if ($shortcode_settings['show_header']) {
-        $bonus_header = 1; //add 1 row for the header
-    }
+    $num_to_display = min(count($stock_data_list), $shortcode_settings['display_number']); // FIX ME
     
-    $output .= stock_widget_create_css_header($shortcode_settings, $num_to_display + $bonus_header);
+    $output .= stock_widget_create_css_header($shortcode_settings, $num_to_display);
     $output .=      stock_widget_create_table($shortcode_settings, $stock_data_list, $num_to_display);
     return $output;
 }
@@ -117,64 +116,76 @@ function stock_widget_create_css_header($shortcode_settings, $num_to_display) {
         $text_color     = $shortcode_settings['font_color'];
         $bgcolor1       = $shortcode_settings['bg_color1'];
         $bgcolor2       = $shortcode_settings['bg_color2'];
+        $bgcolor3       = $shortcode_settings['bg_color3'];
+        // Some layouts require special css
+        $paddinghide = 'padding:0px'; $paginationhide = '';
+        switch ($shortcode_settings['layout']) {
+            case 1:
+            case 4:
+                $paddinghide = 'padding:8px 10px'; // Layouts 1 and 4 need padding between entries
+            break;
+            case 2:
+                $paginationhide = 'display:none'; // Layout 2 is technially paginated, but we don't want the paging controls
+            break;
+        }
+
+
         //$num_to_display = $shortcode_settings['display_number']; // need to pass in for the header
 
         //NOTE: rows are an individual stock with multiple elements
         //NOTE: elements are pieces of a row, EX.  widget_name & price are each elements
-        $element_width = round($width  / $number_of_elements, 0, PHP_ROUND_HALF_DOWN);
-        $row_height    = round($height / $num_to_display,     0, PHP_ROUND_HALF_DOWN);
+        // $element_width = round($width  / $number_of_elements, 0, PHP_ROUND_HALF_DOWN); // FIXME - not needed?
+        // $row_height    = round($height / $num_to_display,     0, PHP_ROUND_HALF_DOWN); // FIXME - not needed?
+        // There may be a bunch of junk here I don't need, I should clean this up
         
-        //section for box outline around changed values (if chosen)
-        $change_box_height     = $shortcode_settings['font_size'] + 4; //add 4 pixels to the font size
-        $change_box_width      = round($element_width * 0.7,                             0, PHP_ROUND_HALF_DOWN);
-        $change_box_margin_top = round(($row_height / 2) - ($change_box_height / 2 + 2), 0, PHP_ROUND_HALF_DOWN);
-        $change_box_margin_left= round($element_width * 0.15 - 2,                        0, PHP_ROUND_HALF_DOWN);
-        
-        
-        $hbar_width       = $width - 20; //NOTE: yeah its hardcoded
-        $hbar_side_margin = 10;          //NOTE: for later
-        
-        $vbar_height = round($row_height * 0.7,                0, PHP_ROUND_HALF_DOWN); //used for the vertical bar only
-        $vbar_top    = round(($row_height - $vbar_height) / 2, 0, PHP_ROUND_HALF_DOWN);
         //NOTE: stock_widget_{$id} is actually a class, so we can properly have multiple per page, IDs would have to be globally unique
         return <<<HEREDOC
 <style type="text/css" scoped>
-.stock_widget_{$id} {
+div.table_wrapper_{$id}{
+   width:           {$width}px;
+}
+
+table.stock_widget_{$id} {
    width:            {$width}px;
    height:           {$height}px;
-   line-height:      {$row_height}px;
    {$shortcode_settings['advanced_style']}
 }
 .stock_widget_{$id} .stock_widget_row {
-   width:    {$width}px;
-   height:   {$row_height}px;
-   background-color: {$bgcolor1};
+   color:    {$text_color};
 }
-.stock_widget_{$id} .stock_widget_row div {
-   color:    ${text_color};
+.stock_widget_{$id} .stock_widget_row a{
+   color:    {$text_color};
 }
-.stock_widget_{$id} .stock_widget_row.altbg {
-   background-color: {$bgcolor2};
+.stock_widget_{$id} .stock_widget_row.odd,
+table.stock_widget_{$id}.dataTable.hover tbody tr.odd:hover,
+table.stock_widget_{$id}.dataTable.display tbody tr.odd:hover {
+    background-color: {$bgcolor1};
 }
+
+.stock_widget_{$id} .stock_widget_row.even,
+table.stock_widget_{$id}.dataTable.hover tbody tr.even:hover,
+table.stock_widget_{$id}.dataTable.display tbody tr.even:hover {
+    background-color: {$bgcolor2};
+}
+
+.stock_widget_{$id} .stock_header {
+    background-color: {$bgcolor3};
+}
+
 .stock_widget_{$id} .stock_widget_element {
    font-size:   {$shortcode_settings['font_size']}px;
    font-family: {$shortcode_settings['font_family']},serif;
-   width:       {$element_width}px;  
 }
-.stock_widget_{$id} .stock_widget_element .sw_box {
-   width:       {$change_box_width}px;
-   height:      {$change_box_height}px;
-   line-height: {$change_box_height}px;
-   margin:      {$change_box_margin_top}px 0px 0px {$change_box_margin_left}px; 
+
+.stock_widget_{$id} + .dataTables_paginate {
+    {$paginationhide}
 }
-.stock_widget_{$id} .widget_horizontal_dash {
-   width:  {$hbar_width}px;
-   margin: -1px {$hbar_side_margin}px;
+
+table.dataTable tbody th,
+table.dataTable tbody td {
+    {$paddinghide}
 }
-.stock_widget_{$id} .stock_widget_vertical_line {
-   height:     {$vbar_height}px;
-   margin-top: {$vbar_top}px;
-}
+
 </style>
 HEREDOC;
 
@@ -206,70 +217,83 @@ function stock_data_order_test($a, $b) {
 function stock_widget_create_table($sw_settings, $stock_data_list, $number_of_stocks) {
     
     $id = $sw_settings['id']; //we don't want to use the name because it might have spaces
+    $output = '';
     
     if ($number_of_stocks == 0) { //some kinda error
         return "<!-- we had no stocks for some reason, stock_data_list empty -->";
     }
     
     $number_of_elements = array_sum($sw_settings['data_display']); //for each stock row
-
-    switch($sw_settings['display_order']) {  //valid options "Preset", "A-Z", "Z-A", "Random"
-        case 'Preset':
-            break; //do nothing take the data in the order we got it in
-        case 'A-Z': 
-            usort($stock_data_list, NS.'stock_data_order_test');
-            break;
-        case 'Z-A': 
-            usort($stock_data_list, NS.'stock_data_order_test'); //NOTE: usort works in place
-            $stock_data_list = array_reverse($stock_data_list); //NOTE: reverse returns copy of array
-            break;
-        case 'Random':
-            shuffle($stock_data_list);  //NOTE: shuffle array in place
-            break;
-        default:  //same as Preset effectively
-            //echo "Invalid display option.";
-            break;  
-    }
+    $hide_header = ($sw_settings['show_header'] == 1 ? '' : 'sw_hidden');
     
-    $output = "";
-    if ($sw_settings['show_header']) {
-        $output .= "<div class='stock_widget_row stock_header'>"; //Feature Improvement: add config for header color
-        $column_headers = array("Mrkt", "Syml", "Lst Val", "+/- Val", "+/- %", "Lst Trd"); //Feature Improvement, handle the header text better with sizing, maybe overflow hidden?
+    $output .= "<thead class='stock_widget_row stock_header {$hide_header}'><tr>";
+        $column_headers = array("Market", "Symbol", "Last Value", "Value Change", "% Change", "Last Trade"); //Feature Improvement, handle the header text better with sizing, maybe overflow hidden?
         while ( list($idx, $v) = each($sw_settings['data_display']) ) {
             if ($v == 1) {
-                $output .= "<div class='stock_widget_element'>" . $column_headers[$idx] . "</div>";
+                $output .= "<th class='stock_widget_element'>" . $column_headers[$idx] . "</th>";
             }
         }
-        $output .= "</div><!-- \n -->";
-    }
+        $output .= "</tr></thead><!-- \n -->";
     
-    for ($idx = 0; $idx < $number_of_stocks; $idx++) {
-        $stock_data = $stock_data_list[$idx];
-        $output .= stock_widget_create_row($idx, $stock_data, $sw_settings);
-    }
+    $output .= "<tbody>";
     
-    return "<div class='stock_table stock_widget_{$id}'>{$output}</div>";
+    foreach ($stock_data_list as $stock_data) { // we always print every stock so that datatables can trim it as neccessary
+        $output .= stock_widget_create_row($stock_data, $sw_settings);
+    }
+    $the_jquery =  stock_widget_create_jquery($sw_settings);
+    // datatables additional styling options can be applied as classes to the <table> tag
+    // if we add in more styling options they should be added here
+    $row_borders = ($sw_settings['draw_row_borders'] == 1 ? 'row-border' : '');
+    $cell_borders = ($sw_settings['draw_cell_borders'] == 1 ? 'cell-border' : '');
+    // $hover =  ($shortcode_settings['hover_highlight'] == 1 ? 'hover' : '');   // for if we add in hover option
+    return "<div class='table_wrapper_{$id}'><table class='stock_table stock_widget_{$id} {$row_borders} {$cell_borders} hover'>{$output}</tbody></table></div>
+    {$the_jquery}";
 }
 
-function stock_widget_create_row($idx, $stock_data, $sw_settings) {
+function stock_widget_create_jquery($shortcode_settings) {
+        $json_settings = json_encode($shortcode_settings);
+        return <<<JQC
+        <script type="text/javascript">
+              var tmp = document.getElementsByTagName( 'script' );
+              var thisScriptTag = tmp[ tmp.length - 1 ];
+              var widget_root = jQuery(thisScriptTag).parent().find('table.stock_table');
+              var widget_config = {$json_settings};
+              stock_widget_datatables_init(widget_root, widget_config);
+        </script>
+JQC;
+}
+
+function stock_widget_create_row($stock_data, $sw_settings) {
     if(empty($stock_data['last_val'])) {
         return "<!-- Last Value did not exist, stock error ({$stock_data['stock_sym']})-->";
     }
     $output = "";
     
-    if ($idx != 0) { //special rules for first row
-        if ($sw_settings['draw_horizontal_lines']) {
-            $output .= "<div class='widget_horizontal_dash'></div><!-- \n -->";
-        }
-    }
-    $vertical_line = "";
-    if ($sw_settings['draw_vertical_lines']) {
-        $vertical_line = "<div class='stock_widget_vertical_line'></div>";
-    }
-    $altrow = ($idx % 2 == 1 ? 'altbg' : '');
-
+    ////////// color change definition //////////
+    $valchk = $stock_data['change_percent'];
+    if ($valchk > 2)     {$changer = 'sw_green_big';}
+    elseif ($valchk > 1) {$changer = 'sw_green_med';}
+    elseif ($valchk > 0)    {$changer = 'sw_green_sml';}
+    elseif ($valchk < -2){$changer = 'sw_red_big';}
+    elseif ($valchk < -1){$changer = 'sw_red_med';}
+    elseif ($valchk < 0)    {$changer = 'sw_red_sml';}
+    else                    {$changer = 'sw_gray';}
     
-    //this is for the setting "box" color changing
+    $data_item = $stock_data['change_val'];
+    $data_item = round($data_item, 2);
+    if ($data_item > 0) {          
+        $data_item = "+{$data_item}%";
+    } elseif ($data_item < 0) {
+        $data_item = "{$data_item}%";
+    } else {
+        $data_item = "+{$data_item}.00%";
+    }
+    
+    $text_changer = ($sw_settings['auto_text_color'] == 1 ? 'cell_'.$changer : '');
+    $row_changer = ($sw_settings['auto_background_color'] == 1 ? 'row_'.$changer : '');
+    
+    ////////// end color change def //////////
+    
     $link_wrap_1 = "";
     $link_wrap_2 = "";
     $link_url = $sw_settings['stock_page_url'];
@@ -278,7 +302,8 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
         $link_wrap_1 = "<a href='{$link_url}' target='_blank' rel='external nofollow'>";
         $link_wrap_2 = "</a>";
     }
-    $output .= "<div class='stock_widget_row {$altrow}'><!-- \n -->{$link_wrap_1}";
+    
+    $output .= "<tr class='stock_widget_row {$row_changer} {$text_changer}'>";
    
     //data display option: (Market, Symbol, Last value, change value, change percentage, last trade)
     $display_options = $sw_settings['data_display'];
@@ -293,53 +318,26 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
     } elseif($data_item == "^IXIC") {
         $data_item = "NASDAQ";
     }
-    $output.= "<div class='stock_widget_element'>{$data_item}</div>{$vertical_line}<!-- \n -->";
+    $output.= "<td class='stock_widget_element'>{$link_wrap_1}{$data_item}{$link_wrap_2}</td><!-- \n -->";
 
     if ($display_options[2] == 1) {
         $data_item = $stock_data['last_val'];
-        $data_item = round($data_item, 3); //yahoo gives 3 decimal places precision
-        $output   .= "<div class='stock_widget_element'>{$data_item}</div>{$vertical_line}<!-- \n -->";
-    }
-
-    ///////////////////// common section ////////////////
-    //NOTE: this exists outside of sections because the color changing effect applies to both field 3 and 4
-    $data_item = $stock_data['change_val'];
-    $data_item = round($data_item, 3);
-    if ($data_item > 0) {
-        $changer   = "sw_green";
-        $data_item = "+{$data_item}";
-    } elseif ($data_item < 0) {
-        $changer = "sw_red";
-    } else {
-        $data_item = "+{$data_item}.00";
-        $changer = "";
+        $data_item = round($data_item, 2); //yahoo only gives 2 decimal places precision in most cases.
+        $output   .= "<td class='stock_widget_element'>{$data_item}</td><!-- \n -->";
     }
     
-    //$widget_change_style = get_option('stock_widget_change_style');
-    $widget_change_style = $sw_settings['change_style'];
-    if ($widget_change_style == 'Box') {
-        $wrapper_1 = "<div class='stock_widget_element'><!-- \n --><div class='sw_box {$changer}'>";
-        $wrapper_2 = "</div></div>";
-    }
-    elseif ($widget_change_style == 'Parentheses') {
-        $wrapper_1 = "<div class='stock_widget_element {$changer}'>";
-        $wrapper_2 = "</div>";
-    }
-    else {
-        $wrapper_1 = "<div class='stock_widget_element'>";
-        $wrapper_2 = "</div>";
-    }
-    /////////////////// end common section ///////////////////
+    $wrap1 = "<td class='stock_widget_element'>";
+    $wrap2 = "</td>";
     
     if ($display_options[3] == 1) {
-
-        $output .= "{$wrapper_1}{$data_item}{$wrapper_2}{$vertical_line}<!-- \n -->";
+        $data_item = $stock_data['change_val']; // TODO - FIX THIS : i think i messed this up
+        $output .= "{$wrap1}{$data_item}{$wrap2}";
     }
 
     if ($display_options[4] == 1) {
         $data_item = $stock_data['change_percent'];
         $data_item = str_replace('%', '', $data_item);
-        $data_item = round($data_item, 3);
+        $data_item = round($data_item, 2);
         
         if ($data_item > 0) {          
             $data_item = "+{$data_item}%";
@@ -348,14 +346,15 @@ function stock_widget_create_row($idx, $stock_data, $sw_settings) {
         } else {
             $data_item = "+{$data_item}.00%";
         }
-        if ($widget_change_style == 'Parentheses') {
-            $data_item = "({$data_item})"; //just add the ()
-        }
-        $output .= "{$wrapper_1}{$data_item}{$wrapper_2}{$vertical_line}<!-- \n -->";
+        // if ($widget_change_style == 'Parentheses') { // TODO - maybe add this back in?
+        //    $data_item = "({$data_item})"; // wrap in parentheses
+        //}
+        $output .= "{$wrap1}{$data_item}{$wrap2}<!-- \n -->";
     }
     //NOTE: skip the last trade section
+    // $output .= "<td>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</td>";
 
-    $output .= "{$link_wrap_2}</div>"; //closes the .stock_widget_row
+    $output .= "</tr>"; //closes the .stock_widget_row
 
     return $output;
 }

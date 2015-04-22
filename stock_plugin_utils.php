@@ -11,8 +11,8 @@ function stock_plugin_notice_helper($text, $type = 'updated') {
 function stock_plugin_create_stock_list_input($id, $stocks_string) { //this is a helper function for stock_plugin_create_per_category_stock_lists()
     $name = ($id == 'default') ? 'Default' : get_cat_name($id);
     echo <<<LABEL
-        <label for="input_{$id}_stocks">{$name}</label><br/>
-        <input id="input_{$id}_stocks" name="stocks_for_{$id}" type="text" value="{$stocks_string}" style="width:100%;"/>
+        {$name}<br/>
+        <textarea id="input_{$id}_stocks" name="stocks_for_{$id}" rows="6" cols = "40" style="width:100%;">{$stocks_string}</textarea>
         
 LABEL;
 }
