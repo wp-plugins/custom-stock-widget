@@ -715,21 +715,12 @@ function stock_widget_create_widget_layout_section($shortcode_settings) {
         <table id="layout_radio_buttons">
             <tbody>
                 <tr>
-                    <td><label for="display_expand"><div style="height:80px;width:80px;background-color:blue;margin:auto;"></div></label></td>
-                    <td><label for="display_static"><div style="height:80px;width:80px;background-color:blue;margin:auto;"></div></label></td>
-                    <td><label for="display_pages"> <div style="height:80px;width:80px;background-color:blue;margin:auto;"></div></label></td>
-                    <td><label for="display_scroll"><div style="height:80px;width:80px;background-color:blue;margin:auto;"></div></label></td>
+                    <td><label for="display_static"><img src="<?php echo plugin_dir_url(__FILE__)?>images/static.png" style="height:80px;width:80px;"></label></td>
+                    <td><label for="display_expand"><img src="<?php echo plugin_dir_url(__FILE__)?>images/expand.png" style="height:80px;width:80px;"></label></td>
+                    <td><label for="display_pages"><img src="<?php echo plugin_dir_url(__FILE__)?>images/pages.png" style="height:80px;width:80px;"></label></td>
+                    <td><label for="display_scroll"><img src="<?php echo plugin_dir_url(__FILE__)?>images/scroll.png" style="height:80px;width:80px;"></label></td>
                 </tr>
                 <tr>
-                    <td><label for="display_expand">Expand</label><br />
-                    <input
-                        id="display_expand"
-                        type="radio"
-                        name="layout"
-                        value="1"
-                        <?php echo $layout[1]; ?>
-                        onclick='swap_layout(1)'
-                    /></td>
                     <td><label for="display_static">Static</label><br />
                     <input
                         id="display_static"
@@ -738,6 +729,15 @@ function stock_widget_create_widget_layout_section($shortcode_settings) {
                         value="2"
                          <?php echo $layout[2]; ?>
                         onclick='swap_layout(2)'
+                    /></td>
+                    <td><label for="display_expand">Expand</label><br />
+                    <input
+                        id="display_expand"
+                        type="radio"
+                        name="layout"
+                        value="1"
+                        <?php echo $layout[1]; ?>
+                        onclick='swap_layout(1)'
                     /></td>
                     <td><label for="display_pages">Pages</label><br />
                     <input
