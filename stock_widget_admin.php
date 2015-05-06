@@ -52,9 +52,10 @@ define(NS.'SP_TYPE', 'widget');
 define(NS.'SP_VALIDATION_PARAMS', <<< DEFINE
 {
 "max_display":   [1,   100],
-"width":         [100, 5000],
-"height":        [50, 10000],
-"font_size":     [5,   36]
+"width":         [100, 500],
+"height":        [100, 1000],
+"font_size":     [5,   32],
+"change_styles": ["None", "Box", "Parentheses"]
 }
 DEFINE
 );  //access with (array)json_decode(SP_VALIDATION_PARAMS);
@@ -77,28 +78,23 @@ function stock_widget_create_db_table() {  //NOTE: for brevity into a function
     $sql = "CREATE TABLE {$table_name} (
     id                      mediumint(9)                    NOT NULL AUTO_INCREMENT,
     name                    varchar(50)  DEFAULT ''         NOT NULL,
-    layout                  tinyint(1)   DEFAULT 1          NOT NULL,
-    width                   smallint(4)  DEFAULT 300        NOT NULL,
-    height                  smallint(4)  DEFAULT 70         NOT NULL,
-    display_number          tinyint(3)   DEFAULT 5          NOT NULL,
-    font_size               tinyint(3)   DEFAULT 12         NOT NULL,
-    font_family             varchar(20)  DEFAULT 'Times'    NOT NULL,
-    font_color              varchar(7)   DEFAULT '#5DFC0A'  NOT NULL,
-    auto_text_color         tinyint(1)   DEFAULT 1          NOT NULL,
     bg_color1               varchar(7)   DEFAULT '#000000'  NOT NULL,
     bg_color2               varchar(7)   DEFAULT '#7F7F7F'  NOT NULL,
-    auto_background_color   tinyint(1)   DEFAULT 0          NOT NULL,
-    bg_color3               varchar(7)   DEFAULT '#DDDDDD'  NOT NULL,
-    sorting_enabled         tinyint(1)   DEFAULT 1          NOT NULL,
+    font_color              varchar(7)   DEFAULT '#5DFC0A'  NOT NULL,
+    font_family             varchar(20)  DEFAULT 'Times'    NOT NULL,
+    display_order           varchar(20)  DEFAULT 'Preset'   NOT NULL,
+    change_style            varchar(20)  DEFAULT 'Box'      NOT NULL,
+    font_size               tinyint(3)   DEFAULT 12         NOT NULL,
+    width                   smallint(4)  DEFAULT 300        NOT NULL,
+    height                  smallint(4)  DEFAULT 70         NOT NULL,
     data_display            tinyint(2)   DEFAULT 30         NOT NULL,
-    default_sort            tinyint(2)   DEFAULT 1          NOT NULL,
+    display_number          tinyint(3)   DEFAULT 5          NOT NULL,
+    draw_vertical_lines     tinyint(1)   DEFAULT 0          NOT NULL,
+    draw_horizontal_lines   tinyint(1)   DEFAULT 0          NOT NULL,
     show_header             tinyint(1)   DEFAULT 0          NOT NULL,
-    draw_row_borders        tinyint(1)   DEFAULT 0          NOT NULL,
-    draw_cell_borders       tinyint(1)   DEFAULT 0          NOT NULL,
-    hover_highlight         tinyint(1)   DEFAULT 0          NOT NULL,
-    advanced_style          text                            NOT NULL,
-    stock_page_url          text                            NOT NULL,
-    stock_list              text                            NOT NULL,
+    stock_page_url          text         NOT NULL,
+    stock_list              text         NOT NULL,
+    advanced_style          text         NOT NULL,
     UNIQUE KEY name (name),
     PRIMARY KEY (id)
     ) {$charset};";
@@ -262,29 +258,25 @@ function stock_widget_reset_options() {
     
     $stock_widget_default_settings = Array(
         //'name'                  => 'Default Settings', //redundant
-        'layout'                => 1,
-        'width'                 => 300,
-        'height'                => 70,
-        'display_number'        => 5,  //from max_display
-        'font_size'             => 12,
-        'font_family'           => 'Times',
-        'font_color'            => '#5DFC0A', 
-        'auto_text_color'       => 1,
-        'bg_color1'             => '#000000',
-        'bg_color2'             => '#7F7F7F',
-        'auto_background_color' => 0,
-        'sorting_enabled'       => 1,
         'data_display'          => array(0,1,1,1,1,0),
         //'default_market'      => 'DOW',
         //'display_options_strings' => array("Market", "Symbol", "Last value", "Change value", "Change percentage", "Last trade"),
-        'default_sort'          => 1,
-        'show_header'           => false,
-        'draw_row_borders'      => false,
-        'draw_cell_borders'     => false,
-        'hover_highlight'       => false,
+        'font_color'            => '#5DFC0A', 
+        'bg_color1'             => '#000000',
+        'bg_color2'             => '#7F7F7F', //NOTE: removed border color entirely
+        'width'                 => 300,
+        'height'                => 70,
+        'font_size'             => 12,
+        'font_family'           => 'Times',
+        'display_number'        => 5,  //from max_display
         'advanced_style'        => 'margin: auto;',
+        'draw_vertical_lines'   => false,  //vertical_dash
+        'draw_horizontal_lines' => false,  //horizontal_dash
+        'show_header'           => false,
+        'display_order'         => 'Preset', //from display_type
+        'change_style'          => 'Box',    //its how the stock change status is emphasized
         'stock_page_url'        => 'https://www.google.com/finance?q=__STOCK__'
-    );
+        );
     
     sp_update_row($stock_widget_default_settings, array('name' => 'Default Settings'));
     
@@ -411,7 +403,7 @@ function stock_widget_admin_page($id = '') {
     if (isset($_POST['save_changes'])) {
         if ($ds_flag) stock_plugin_update_per_category_stock_lists();
         stock_widget_update_options($id); //pass in the unchanged settings
-        stock_plugin_notice_helper("Changes saved");
+        stock_plugin_notice_helper("Changes saved (Random: ".rand().")"); //Remove after tracker #23768
     } 
     elseif (isset($_POST['reset_options'])) { //just reload the page if from non Default Settings
         if ($ds_flag)
@@ -459,19 +451,19 @@ HEREDOC;
                         stock_widget_create_template_field();
                         
     echo "              <div class='sp-options-subsection'>
-                            <h4>Layout & Size</h4>";
+                            <h4>Widget Config</h4>";
                                 stock_plugin_cookie_helper(1);
-                                stock_widget_create_widget_layout_section($shortcode_settings);
+                                stock_widget_create_widget_config_section($shortcode_settings);
     echo "                  </div>
                         </div>
                         <div class='sp-options-subsection'>
-                            <h4>Color & Style</h4>";
+                            <h4>Text Config</h4>";
                                 stock_plugin_cookie_helper(2);
-                                stock_widget_create_color_config($shortcode_settings);
+                                stock_widget_create_text_config($shortcode_settings);
     echo "                  </div>
                         </div>
                         <div class='sp-options-subsection'>
-                            <h4>Data & Display</h4>";
+                            <h4>Stock Display Config</h4>";
                                 stock_plugin_cookie_helper(3);
                                 stock_widget_create_display_options($shortcode_settings);
     echo "                  </div>
@@ -548,37 +540,55 @@ function stock_widget_templates() { //helper function to avoid global variables
             'font_family'           => 'Times', 
             'font_color'            => '#5DFC0A', 
             'bg_color1'             => '#000000',
-            'bg_color2'             => '#7F7F7F'),
+            'bg_color2'             => '#7F7F7F', 
+            'draw_horizontal_lines' => false, 
+            'draw_vertical_lines'   => false, 
+            'change_style'          => 'Box'),
         'Classic' => array(
             'name'                  => 'Classic (white on black)', 
             'font_family'           => 'Arial', 
             'font_color'            => '#FFFFFF', 
             'bg_color1'             => '#000000',
-            'bg_color2'             => '#000000'),
+            'bg_color2'             => '#000000', 
+            'draw_horizontal_lines' => true, 
+            'draw_vertical_lines'   => false, 
+            'change_style'          => 'Box'),
         'Ocean' => array(
             'name'                  => 'Ocean (white on purple/blue)', 
             'font_family'           => 'Arial', 
             'font_color'            => '#FFFFFF', 
             'bg_color1'             => '#3366CC', 
-            'bg_color2'             => '#19A3FF'),
+            'bg_color2'             => '#19A3FF', 
+            'draw_horizontal_lines' => false, 
+            'draw_vertical_lines'   => true, 
+            'change_style'          => 'None'),
         'Matrix' => array(
             'name'                  => 'Matrix (green on black)', 
             'font_family'           => 'Arial', 
             'font_color'            => '#66FF33', 
             'bg_color1'             => '#000000', 
-            'bg_color2'             => '#000000'),
+            'bg_color2'             => '#000000', 
+            'draw_horizontal_lines' => true, 
+            'draw_vertical_lines'   => false, 
+            'change_style'          => 'None'),
         'Minimal' => array(
             'name'                  => 'Minimal (black on white)', 
             'font_family'           => 'Arial', 
             'font_color'            => '#000000', 
             'bg_color1'             => '#FFFFFF', 
-            'bg_color2'             => '#FFFFFF'),
+            'bg_color2'             => '#FFFFFF', 
+            'draw_horizontal_lines' => true, 
+            'draw_vertical_lines'   => false, 
+            'change_style'          => 'Parentheses'),
         'Cotton Candy' => array(
             'name'                  => 'Cotton Candy (blue on pink/purple)', 
             'font_family'           => 'cursive', 
             'font_color'            => '#00FFFF', 
             'bg_color1'             => '#FF5050', 
-            'bg_color2'             => '#CC66FF'),
+            'bg_color2'             => '#CC66FF', 
+            'draw_horizontal_lines' => true, 
+            'draw_vertical_lines'   => false, 
+            'change_style'          => 'None'),
     );
 }
 
@@ -601,7 +611,7 @@ function stock_widget_create_template_field() {
 }
 
 function stock_widget_update_options($id) {
-    
+
     $unchanged = sp_get_row($id, 'id');
     $validation_params = (array)json_decode(SP_VALIDATION_PARAMS);
     
@@ -624,32 +634,28 @@ function stock_widget_update_options($id) {
             (array_key_exists('change_percent', $_POST) ? 1 : 0),
             0  //last trade
     );
-    $settings_new['data_display']           = $new_display_options;
-    $settings_new['sorting_enabled']        = (array_key_exists('sorting_enabled',       $_POST) ? 1 : 0);
-    $settings_new['draw_row_borders']       = (array_key_exists('row_borders',           $_POST) ? 1 : 0);
-    $settings_new['draw_cell_borders']      = (array_key_exists('cell_borders',          $_POST) ? 1 : 0);
-    $settings_new['show_header']            = (array_key_exists('show_header',           $_POST) ? 1 : 0);
-    $settings_new['auto_text_color']        = (array_key_exists('auto_text_color',       $_POST) ? 1 : 0);
-    $settings_new['auto_background_color']  = (array_key_exists('auto_background_color', $_POST) ? 1 : 0);
+    $settings_new['data_display']          = $new_display_options;
+    $settings_new['draw_vertical_lines']   = (array_key_exists('vertical_dash',   $_POST) ? 1 : 0);
+    $settings_new['draw_horizontal_lines'] = (array_key_exists('horizontal_dash', $_POST) ? 1 : 0);
+    $settings_new['show_header']           = (array_key_exists('show_header',     $_POST) ? 1 : 0);
     
-    $settings_new['layout']       = (array_key_exists('layout',      $_POST) ? $_POST['layout']       : 2);
-    $settings_new['default_sort'] = (array_key_exists('default_sort',$_POST) ? $_POST['default_sort'] : 1);
-        
-    if (array_key_exists('max_display',$_POST)) {
-        $tmp = relevad_plugin_validate_integer($_POST['max_display'],  $validation_params['max_display'][0],  $validation_params['max_display'][1],  false);
-        if ($tmp) {$settings_new['display_number'] = $tmp;}
+    $settings_new['display_order'] = $_POST['display_type']; //these are dropdowns so no validation necessary -- unless someone deliberately tries to post garbage to us
+    $settings_new['change_style']  = $_POST['change_style'];
+    
+    $tmp = relevad_plugin_validate_integer($_POST['max_display'],  $validation_params['max_display'][0],  $validation_params['max_display'][1],  false);
+    if ($tmp) {
+    $settings_new['display_number'] = $tmp;
     }
     
-    if (array_key_exists('width',$_POST))  $settings_new['width']  = relevad_plugin_validate_integer($_POST['width'],  $validation_params['width'][0],  $validation_params['width'][1],  $unchanged['width']);
-    if (array_key_exists('height',$_POST)) $settings_new['height'] = relevad_plugin_validate_integer($_POST['height'], $validation_params['height'][0], $validation_params['height'][1], $unchanged['height']);
+    $settings_new['width']  = relevad_plugin_validate_integer($_POST['width'],  $validation_params['width'][0],  $validation_params['width'][1],  $unchanged['width']);
+    $settings_new['height'] = relevad_plugin_validate_integer($_POST['height'], $validation_params['height'][0], $validation_params['height'][1], $unchanged['height']);
 
     $settings_new['font_size']   = relevad_plugin_validate_integer(    $_POST['font_size'],   $validation_params['font_size'][0],  $validation_params['font_size'][1],  $unchanged['font_size']);
     $settings_new['font_family'] = relevad_plugin_validate_font_family($_POST['font_family'], $unchanged['font_family']);
 
-    if (array_key_exists('font_color',$_POST))     $settings_new['font_color'] = relevad_plugin_validate_color($_POST['text_color'],        $unchanged['font_color']);
-    if (array_key_exists('bg_color1',$_POST)) $settings_new['bg_color1']  = relevad_plugin_validate_color($_POST['bg_color1'], $unchanged['bg_color1']);
-    if (array_key_exists('bg_color2',$_POST)) $settings_new['bg_color2']  = relevad_plugin_validate_color($_POST['bg_color2'], $unchanged['bg_color2']);
-    if (array_key_exists('bg_color3',$_POST)) $settings_new['bg_color3']  = relevad_plugin_validate_color($_POST['bg_color3'], $unchanged['bg_color3']);
+    $settings_new['font_color'] = relevad_plugin_validate_color($_POST['text_color'],        $unchanged['font_color']);
+    $settings_new['bg_color1']  = relevad_plugin_validate_color($_POST['background_color1'], $unchanged['bg_color1']);
+    $settings_new['bg_color2']  = relevad_plugin_validate_color($_POST['background_color2'], $unchanged['bg_color2']);
     
     $settings_new['stock_page_url'] = $_POST['stock_page_url'];
     
@@ -657,14 +663,16 @@ function stock_widget_update_options($id) {
     if ($tmp != '' && substr($tmp, -1) != ';') { $tmp .= ';'; } //poormans making of a css rule
     $settings_new['advanced_style'] = $tmp;
     
-    // In case the user specifies 'height' value that is not enough to fit 'display_number' number of stocks:
-    // The stock widget will expand beyond the 'height' parameter to satisfy the 'display_number' parameter,
-    // and we will display a notification to the user that this is what is happening.
-        
-    if (($settings_new['layout'] == 2 || $settings_new['layout'] == 3) && ($settings_new['font_size'] * $settings_new['display_number'] > $settings_new['height'])) { // This error only applies in layouts 2 and 3
-        stock_plugin_notice_helper("<b class='sp-notice'>Notice:</b> Height of {$settings_new['height']}px is not enough to display {$settings_new['display_number']} stocks at font size {$settings_new['font_size']}.<br />Stock widget height will be expanded.", 'notice notice-warning');
+    //****** fix scaling *******
+    //NOTE: we would have to increase the overall width to compensate.
+    //NOTE: Header overlap is the biggest problem
+    //this section is to fix the width/height attributes so that incase the ticker would have had overlapping text, it fixes itself to a minimum acceptable level
+    $minimum_width = $settings_new['font_size'] * 4 * array_sum($new_display_options);  //point font * 4 characters * X elements ~ aproximate
+    if ($minimum_width > $settings_new['width']) {
+        stock_plugin_notice_helper("<b class='sp-warning'>Warning:</b> Chosen font size of {$settings_new['font_size']} when used with width of {$settings_new['width']} could cause overlap of text.", 'error');
     }
-
+    //****** end fix scaling ******* 
+    
     //last handle this shortcode's stock list and name if either exist
     if (isset($_POST['stocks_for_shortcode'])) {
         $settings_new['stock_list'] = stock_plugin_validate_stock_list($_POST['stocks_for_shortcode']);
@@ -684,21 +692,8 @@ function stock_widget_update_options($id) {
         //NOTE: 50 chars limit but this will be auto truncated by mysql, and enforced by html already
     }
     
-    
-    //////////////// DEBUG DEBUG DEBUG
-    /*
-    echo "<pre>";
-    print_r($unchanged);
-    echo "<br />";
-    print_r($settings_new);
-    echo "<br />";
-    print_r($_POST);
-    echo "</pre>";
-    */
-    //////////////// DEBUG DEBUG DEBUG
-    
     //now merge template settings > post changes > old unchanged settings in that order
-    $status = sp_update_row(array_replace($unchanged, $settings_new, $template_settings), array('id' => $id));
+    sp_update_row(array_replace($unchanged, $settings_new, $template_settings), array('id' => $id));
 }
 
 function stock_widget_create_name_field($shortcode_settings) {
@@ -706,211 +701,47 @@ function stock_widget_create_name_field($shortcode_settings) {
     <input id='input_shortcode_name' name='shortcode_name' type='text' maxlength='50' value='{$shortcode_settings['name']}' class='shortcode_name'/>";
 }
 
-function stock_widget_create_widget_layout_section($shortcode_settings) {
-    $layout = array (null,0,0,0,0); // first key is null because I hate index 0
-    $layout_disable = array (null,'','','','');
-    $layout[$shortcode_settings['layout']]         ='checked';     // For the selected layout's input control, write the word 'checked'
-    $layout_disable[$shortcode_settings['layout']] ='disabled';    // For not applicable inputs on the selected layout, write the word 'disabled'
-    ?>
-        <table id="layout_radio_buttons">
-            <tbody>
-                <tr>
-                    <td><label for="display_static"><img src="<?php echo plugin_dir_url(__FILE__)?>images/static.png" style="height:80px;width:80px;"></label></td>
-                    <td><label for="display_expand"><img src="<?php echo plugin_dir_url(__FILE__)?>images/expand.png" style="height:80px;width:80px;"></label></td>
-                    <td><label for="display_pages"><img src="<?php echo plugin_dir_url(__FILE__)?>images/pages.png" style="height:80px;width:80px;"></label></td>
-                    <td><label for="display_scroll"><img src="<?php echo plugin_dir_url(__FILE__)?>images/scroll.png" style="height:80px;width:80px;"></label></td>
-                </tr>
-                <tr>
-                    <td><label for="display_static">Static</label><br />
-                    <input
-                        id="display_static"
-                        type="radio"
-                        name="layout"
-                        value="2"
-                         <?php echo $layout[2]; ?>
-                        onclick='swap_layout(2)'
-                    /></td>
-                    <td><label for="display_expand">Expand</label><br />
-                    <input
-                        id="display_expand"
-                        type="radio"
-                        name="layout"
-                        value="1"
-                        <?php echo $layout[1]; ?>
-                        onclick='swap_layout(1)'
-                    /></td>
-                    <td><label for="display_pages">Pages</label><br />
-                    <input
-                        id="display_pages"
-                        type="radio"
-                        name="layout"
-                        value="3"
-                         <?php echo $layout[3]; ?>
-                        onclick='swap_layout(3)'
-                    /></td>
-                    <td><label for="display_scroll">Scroll</label><br />
-                    <input
-                        id="display_scroll"
-                        type="radio"
-                        name="layout"
-                        value="4"
-                         <?php echo $layout[4]; ?>
-                        onclick='swap_layout(4)'
-                    /></td>
-                </tr>
-            </tbody>
-        </table>
+function stock_widget_create_widget_config_section($shortcode_settings) {
+    echo <<< HEREDOC
+        <label for="input_width">Width: </label>
+        <input  id="input_width"  name="width"  type="text" value="{$shortcode_settings['width']}"  class="itxt"/>
+        <label for="input_height">Height: </label>
+        <input  id="input_height" name="height" type="text" value="{$shortcode_settings['height']}" class="itxt"/>
         <br />
-        <table>
-            <tbody>
-                <tr>
-                    <td><input
-                            id="input_width"
-                            name="width"
-                            type="number"
-                            step="10"
-                            min="100"
-                            max="5000"
-                            value="<?php echo $shortcode_settings['width'];?>"
-                            class="itxt"
-                    /></td>
-                    <td><label for="input_width">Widget Width</label></td>
-                </tr>
-                <tr>
-                    <td><input
-                            id="input_height"
-                            name="height"
-                            type="number"
-                            step="10"
-                            min="50"
-                            max="10000"
-                            value="<?php echo $shortcode_settings['height'];?>"
-                            class="itxt layout_aff layout_1_disable"
-                            <?php echo $layout_disable[1];?>
-                    /></td>
-                    <td><label for="input_height" class="label_<?php echo $layout_disable[1];?>">Widget Height</label></td>
-                </tr>
-                <tr>
-                    <td><input
-                            id="input_max_display"
-                            name="max_display"
-                            type="number"
-                            step="1"
-                            min="1"
-                            max="100"
-                            value="<?php echo $shortcode_settings['display_number']?>"
-                            class="itxt layout_aff layout_1_disable layout_4_disable"
-                            <?php echo $layout_disable[1].$layout_disable[4];?>
-                    /></td>
-                    <td><label for="input_max_display" class="label_<?php echo $layout_disable[1].$layout_disable[4]?>">Number of Stocks</label></td>
-                </tr>
-            </tbody>
-        </table>
-    <?php
+        <label for="input_max_display">Maximum number of stocks displayed: </label>
+        <input  id="input_max_display" name="max_display" type="text" value="{$shortcode_settings['display_number']}" class="itxt" style="width:40px;" />
+        <br />
+        <label for="input_background_color1">Odd Row Background Color:</label>
+        <input  id="input_background_color1" name="background_color1" type="text" value="{$shortcode_settings['bg_color1']}" class="itxt color_input" style="width:99px;" />
+        <sup id="background_color_picker_help1"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <script>enhanceTypeColor("input_background_color1", "background_color_picker_help1");</script>
+        <br />
+        <label for="input_background_color2">Even Row Background Color:</label>
+        <input  id="input_background_color2" name="background_color2" type="text" value="{$shortcode_settings['bg_color2']}" class="itxt color_input" style="width:99px;" />
+        <sup id="background_color_picker_help2"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <script>enhanceTypeColor("input_background_color2", "background_color_picker_help2");</script>
+HEREDOC;
 }
 
-function stock_widget_create_color_config($shortcode_settings) {
+
+function stock_widget_create_text_config($shortcode_settings) {
     $default_fonts  = array("Arial", "cursive", "Gadget", "Georgia", "Impact", "Palatino", "sans-serif", "serif", "Times");  //maybe extract this list into utils
-    ?>
-    <table>
-        <tbody>
-            <tr>
-                <td><input
-                        id="input_font_size"
-                        name="font_size"
-                        type="number"
-                        step="1"
-                        min="5"
-                        max="36"
-                        value="<?php echo $shortcode_settings['font_size'];?>"
-                        class="itxt"
-                /></td>
-                <td><label for="input_font_size">Text Size</label></td>
-            </tr>
-            <tr>
-                <td><input 
-                        id="input_font_family"
-                        name="font_family"
-                        list="font_family"
-                        value="<?php echo $shortcode_settings['font_family']?>"
-                        autocomplete="on"
-                        style="width:100px;"
-                /></td>
-                <td><label for="input_font_family">Font Family</label></td>
-            </tr>
-            <tr>
-                <td><input
-                        id="input_text_color"
-                        name="text_color"
-                        type="text"
-                        value="<?php echo $shortcode_settings['font_color']?>"
-                        class="itxt color_input disable_text"
-                        style="width:100px;"
-                /></td>
-                <td>
-                    <label for="input_text_color" class="disable_text">Text Color</label>
-                    <sup id="text_color_picker_help"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
-                </td>
-                    <script>enhanceTypeColor("input_text_color", "text_color_picker_help");</script>
-            </tr>
-            <tr>
-                <td><input 
-                        id='input_text_color_change' 
-                        name='auto_text_color' 
-                        type='checkbox' 
-                        <?php checked($shortcode_settings['auto_text_color'], 1);?>
-                /></td>
-                <td><label for="input_text_color_change">Auto Text Color - Price</label></td>
-            </tr>
-            <tr>
-                <td><input
-                        id="input_background_color_odd" 
-                        name="bg_color1" 
-                        type="text" 
-                        value="<?php echo $shortcode_settings['bg_color1'];?>" 
-                        class="itxt color_input disable_bg" 
-                        style="width:99px;" 
-                /></td>
-                <td><label for="input_background_color_odd" class="disable_bg">Background Color - Odd Rows</label><sup id="background_color_picker_odd"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup></td>
-                    <script>enhanceTypeColor("input_background_color_odd", "background_color_picker_odd");</script>
-            </tr>
-            <tr>
-                <td><input
-                        id="input_background_color_even" 
-                        name="bg_color2" 
-                        type="text" 
-                        value="<?php echo $shortcode_settings['bg_color2'];?>" 
-                        class="itxt color_input disable_bg" 
-                        style="width:99px;" 
-                /></td>
-                <td><label for="input_background_color_even" class="disable_bg">Background Color - Even Rows</label><sup id="background_color_picker_even"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup></td>
-                    <script>enhanceTypeColor("input_background_color_even", "background_color_picker_even");</script>
-            </tr>
-            <tr>
-                <td><input
-                        id='input_bg_color_change'
-                        name='auto_background_color'
-                        type='checkbox'
-                        <?php checked($shortcode_settings['auto_background_color'], 1);?>
-                /></td>
-                <td><label for="input_bg_color_change">Auto Background Color - Price</label></td>
-            </tr>
-            <tr>
-                <td><input
-                        id="input_header_color" 
-                        name="bg_color3" 
-                        type="text" 
-                        value="<?php echo $shortcode_settings['bg_color3'];?>" 
-                        class="itxt color_input disable_header" 
-                        style="width:99px;" 
-                /></td>
-                <td><label for="input_header_color" class="disable_header">Background Color - Header</label><sup id="header_color_picker"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup></td>
-                    <script>enhanceTypeColor("input_header_color", "header_color_picker");</script>
-            </tr>
-        </tbody>
-    </table>        
-    <?php
-    echo "<datalist id='font_family'>";
+
+    echo <<< HEREDOC
+        <label for="input_text_color">Color: </label>
+        <input  id="input_text_color" name="text_color" type="text" value="{$shortcode_settings['font_color']}" class="itxt color_input" style="width:100px;" />
+        <sup id="text_color_picker_help"><a href="http://www.w3schools.com/tags/ref_colorpicker.asp" ref="external nofollow" target="_blank" title="Use hex to pick colors!" class="color_q">[?]</a></sup>
+        <script>enhanceTypeColor("input_text_color", "text_color_picker_help");</script>
+        
+        <label for="input_font_size">Size: </label>
+        <input  id="input_font_size" name="font_size" type="text" value="{$shortcode_settings['font_size']}" class="itxt" style="width:40px;"/>
+        
+        <br />
+        <label for="input_font_family">Font-Family: </label>
+        <input  id="input_font_family" name="font_family" list="font_family" value="{$shortcode_settings['font_family']}" autocomplete="on" style="width:125px;"/>
+        <datalist id="font_family">
+HEREDOC;
+
     foreach($default_fonts as $font){
         echo "<option value='{$font}'></option>";
     }
@@ -921,109 +752,53 @@ function stock_widget_create_color_config($shortcode_settings) {
 
 function stock_widget_create_display_options($shortcode_settings) {
     $validation_params = (array)json_decode(SP_VALIDATION_PARAMS);
-    // NOTE for data_display: 0 market, 1 symbol, 2 last value, 3 change value, 4 percent change, 5 is the "last trade"
-    // TODO -- default_sort should be pulled from and assigned to $shortcode_settings['display_order']    somehow
-    $default_sort = array (0,0,0,0,0,0); // we make this an array to correspond with data_display.
-    $default_sort[$shortcode_settings['default_sort']] = 1; // in the array of $default_sort, change one of the 0 to a 1, in the correct index
-            
+    
+    $all_orders      = array('Preset', 'A-Z', 'Z-A', 'Random');
+    //NOTE for data_display: options 0 and 1 are "market" and the "stock symbol" itself
+    //      option 5 is the "last trade"
     ?>
-    <table>
-        <thead>
-            <tr>
-                <th>Show</th>
-                <th>Column</th>
-                <th><label >Default Sort</label></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>
-                    <input  id='input_stock_symbol' name='stock_symbol' type='checkbox' <?php checked(1, $shortcode_settings['data_display'][1]);?> disabled>
-                </td>
-                <td>
-                    <label for='input_stock_symbol'>Stock Symbol</label>
-                </td>
-                <td>
-                    <input id='stock_symbol_sort'  name='default_sort' type='radio' value='1' class='disable_stock_symbol' <?php checked(1, $default_sort[1]);?>>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_last_value' name='last_value' type='checkbox' <?php checked(1, $shortcode_settings['data_display'][2]);?>>
-                </td>
-                <td>
-                    <label for='input_last_value'>Last Value</label>
-                </td>
-                <td>
-                    <input id='last_value_sort'  name='default_sort' type='radio' value='2' class='disable_last_val' <?php checked(1, $default_sort[2]);?>>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_change_value' name='change_value' type='checkbox' <?php checked(1, $shortcode_settings['data_display'][3]);?>>
-                </td>
-                <td>
-                    <label for='input_change_value'>Change Value</label>
-                </td>
-                <td>
-                    <input  id='input_change_value'  name='default_sort' type='radio' value='3' class='disable_change_value' <?php checked(1, $default_sort[3]);?>>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_change_percent' name='change_percent' type='checkbox' <?php checked(1, $shortcode_settings['data_display'][4]);?>>
-                </td>
-                <td>
-                    <label for='input_change_percent'>Change Percent</label>
-                </td>
-                <td>
-                    <input  id='input_change_percent'  name='default_sort' type='radio' value='4' class='disable_change_percent' <?php checked(1, $default_sort[4]);?>>
-                </td>
-            </tr>
-            <tr><!-- empty row for spacing --></tr>
-            <tr>
-                <th>Show</th>
-                <th>Feature</th>
-                <th><!--empty---></th>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_show_header' name='show_header' type='checkbox' <?php checked($shortcode_settings['show_header']); ?>>
-                </td>
-                <td>
-                    <label for='input_show_header'>Show Headers</label>
-                </td>
-                <td></td>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_sorting_enabled' name='sorting_enabled' type='checkbox' class='disable_header' <?php checked($shortcode_settings['sorting_enabled']); ?>>
-                </td>
-                <td>
-                    <label for='input_sorting_enabled' class='disable_header'>Columns Sortable</label>
-                </td>
-                <th></th>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_row_borders' name='row_borders' type='checkbox' <?php checked($shortcode_settings['draw_row_borders']);?>
-                </td>
-                <td>
-                    <label for='input_row_borders'>Row Borders</label>
-                </td>
-                <td></td>
-            </tr>
-            <tr>
-                <td>
-                    <input  id='input_cell_borders' name='cell_borders' type='checkbox' <?php checked($shortcode_settings['draw_cell_borders']);?>>
-                </td>
-                <td>
-                    <label for='input_cell_borders'>Cell Borders</label>
-                </td>
-                <td></td>
-            </tr>
-        </tbody>
-    </table>
+    
+    <label for='input_show_header'>Show Headers</label>
+    <input  id='input_show_header'    name='show_header'    type='checkbox' <?php checked($shortcode_settings['show_header']); ?>>
+    <br />
+    <label for='input_last_value'>Last Value</label>
+    <input  id='input_last_value'     name='last_value'     type='checkbox' <?php checked(1, $shortcode_settings['data_display'][2]);?>>
+    <br />
+    <label for='input_change_value'>Change Value</label>
+    <input  id='input_change_value'   name='change_value'   type='checkbox' <?php checked(1, $shortcode_settings['data_display'][3]);?>>
+    <br />
+    <label for='input_change_percent'>Change Percent</label>
+    <input  id='input_change_percent' name='change_percent' type='checkbox' <?php checked(1, $shortcode_settings['data_display'][4]);?>>
+    <br />
+    <label for='input_vertical_dash'>Vertical Dash</label>
+    <input  id='input_vertical_dash'  name='vertical_dash'  type='checkbox' <?php checked($shortcode_settings['draw_vertical_lines']);?>>
+    <br />
+    <label for='input_horizontal_dash'>Horizontal Dash</label>
+    <input  id='input_horizontal_dash'name='horizontal_dash'type='checkbox' <?php checked($shortcode_settings['draw_horizontal_lines']);?>>
+    <br />
+    <br />
+    
+    <label for="input_display_type">Order: </label>
+    <select id="input_display_type" name="display_type"  style="width: 100px;">
+    <?php 
+        foreach($all_orders as $order) {
+            echo "<option " . selected($order, $shortcode_settings['display_order']) . ">{$order}</option>";
+        }
+    ?>
+    </select>
+    <br />
+    <?php
+    $all_change_styles = $validation_params['change_styles'];
+    ?>
+    <label for="input_change_style">Price Change Style: </label>
+    <select id="input_change_style" name="change_style"  style="width: 130px;">
+    <?php 
+        foreach($all_change_styles as $style) {
+            echo "<option " . selected($style, $shortcode_settings['change_style']) . ">{$style}</option>";
+        }
+    ?>
+    </select>
+    <br />
     <?php
 }
 
@@ -1069,6 +844,7 @@ function stock_widget_convert_old_options() {
         'draw_horizontal_lines' => get_option('stock_widget_draw_horizontal_dash'),
         'show_header'           => false, //added brandnew option
         'display_order'         => get_option('stock_widget_display_type'),
+        'change_style'          => get_option('stock_widget_change_style'),
         'stock_page_url'        => get_option('stock_page_url')
         );
 

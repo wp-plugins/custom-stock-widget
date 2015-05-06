@@ -59,7 +59,7 @@ function readCookie(name) {
 
 
 function toggleSection(sectionToToggle) {
-    var sec = readCookie(sectionToToggle);
+    sec = readCookie(sectionToToggle);
     if (sec) {                //if cookie has a value
         if (sec == "none") {  //if the section is collapsed when clicked
             document.cookie = sectionToToggle + "=block";  //set the new cookie state to uncollpased
@@ -75,56 +75,3 @@ function fadeNotification() {
     // jQuery('.updated').delay(5000).animate({height:'hide', marginTop:'hide', marginBottom:'hide'}, 1000)   // slides notifacation up, I dont like how this looks
     jQuery('.updated').delay(5000).fadeTo(1000,0) // fades notification out
 }
-
-
-function swap_layout(new_layout) { // when the user clicks a radio button for a new layout, disable inputs that arent valid for that input
-    var heightpx,heightpxlabel,heightnum,heightnumlabel,itmp,ltmp0,ltmp1;
-    heightpx  = jQuery('#input_height');      // height in px
-    heightpxlabel = jQuery('label[for="input_height"]');
-    heightnum = jQuery('#input_max_display'); // height in stocks (number of stocks to display)
-    heightnumlabel = jQuery('label[for="input_max_display"]');
-    switch(new_layout) {
-        case 1: itmp = [true,true]; break; // true = disable input
-        case 2: itmp = [false,false]; break; // false = enable input
-        case 3: itmp = [false,false]; break;
-        case 4: itmp = [false,true]; break;
-    }
-    heightpx.prop('disabled',itmp[0]);
-    heightnum.prop('disabled',itmp[1]);
-    ltmp0 = (itmp[0] ? 0.2 : 1);
-    ltmp1 = (itmp[1] ? 0.2 : 1);
-    heightpxlabel.css({opacity:ltmp0});
-    heightnumlabel.css({opacity:ltmp1});
-}
-
-function toggle_suboption(button,target,invert) { // options page dependency function, button is the checkbox, target is a css class containing all lables & inputs for dependants
-    var target_input = jQuery(target).filter('input'); // seperate inputs from labels
-    var target_label = jQuery(target).filter('label'); 
-    button = jQuery(button);  // This has to be a jQuery object
-    var status = (!invert) ? button.prop('checked') : !button.prop('checked'); // If invert is true, status is opposite of the button state
-    target_input.prop('disabled', status); // Set disabled to equal status
-    if (status) {
-        target_label.addClass("label_disabled");
-    } else {
-        target_label.removeClass("label_disabled");
-    }
-}
-
-//TODO - move this to the top, inside the document ready up there?
-jQuery(document).ready(function() {
-    var d_list =[['#input_text_color_change','.disable_text',           false],
-                 ['#input_bg_color_change',  '.disable_bg',             false],
-                 ['#input_show_header',      '.disable_header',         true],
-                 ['#input_stock_symbol',     '.disable_stock_symbol',   true],
-                 ['#input_last_value',       '.disable_last_val',       true],
-                 ['#input_change_value',     '.disable_change_value',   true],
-                 ['#input_change_percent',   '.disable_change_percent', true]];
-
-    for (var index = 0; index < d_list.length; ++ index) {
-        toggle_suboption(jQuery(d_list[index][0]), d_list[index][1],d_list[index][2]); // run the function once on pageload
-        jQuery(d_list[index][0]).change(d_list[index], function(event) {               // and register it to the .change event handler for future changes
-            toggle_suboption(this,event.data[1],event.data[2])
-        });
-    }
-});
-
