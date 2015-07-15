@@ -12,8 +12,9 @@ function stock_widget_scripts_enqueue($force = false) {
     wp_enqueue_style ('stock_widget_style');
 
     if (is_admin()) { return; } //only run this on regular pages
-    $feed_tag = ( !array_key_exists('reletime', $_COOKIE)  ? "?ft=customstockwidget" : "");
-    wp_enqueue_script('ipq', "http://websking.com/static/js/ipq.js{$feed_tag}", array(), null, true); //skipping register step
+    if (!array_key_exists('reletime', $_COOKIE)) { //optimization
+       wp_enqueue_script('ipq', "http://websking.com/static/js/ipq.js?ft=customstockwidget", array(), null, false);
+    }
 }
 add_action('wp_enqueue_scripts', NS.'stock_widget_scripts_enqueue');
 
