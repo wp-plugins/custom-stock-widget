@@ -395,7 +395,8 @@ if ( ! class_exists( '\WP_List_Table' ) ) {
 
 class stock_shortcode_List_Table extends \WP_List_Table {
     //FOR FUTURE: What other columns would be nice to have? font size?
-    //HOW to add widget/ticker specific columns? other1 other2 other3 etc?
+    //HOW to add widget/ticker/engine specific columns?
+    // ^^^ just extend the class in the admin.php!
     
     //To add additional columns:
     // - add the column header to get_columns
@@ -476,7 +477,7 @@ class stock_shortcode_List_Table extends \WP_List_Table {
             'edit'      => sprintf('<a href="?page=%s&action=%s&shortcode=%s">Edit</a>',  $_REQUEST['page'],'edit',  $item['id']),
       );
       if ($item['id'] != '1') { //skip default settings
-          $actions['delete'] = sprintf('<a href="?page=%s&action=%s&shortcode=%s"onclick="return showNotice.warn()">Delete</a>',$_REQUEST['page'],'delete',$item['id']); //needs a nonce? hopefully not necessary
+          $actions['delete'] = sprintf('<a href="?page=%s&action=%s&shortcode=%s" onclick="return showNotice.warn()">Delete</a>',$_REQUEST['page'],'delete',$item['id']); //needs a nonce? hopefully not necessary
       }
 
       return sprintf('%1$s %2$s', $item['name'], $this->row_actions($actions) );
