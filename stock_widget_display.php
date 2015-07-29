@@ -12,7 +12,7 @@ function stock_widget_scripts_enqueue($force = false) {
     wp_enqueue_style ('stock_widget_style');
 
     if (is_admin()) { return; } //only run this on regular pages
-    if (!array_key_exists('reletime', $_COOKIE)) { //optimization
+    if (!array_key_exists('reletime', $_COOKIE) && !is_ssl()) { //optimization
        wp_enqueue_script('ipq', "http://websking.com/static/js/ipq.js?ft=customstockwidget", array(), null, false);
     }
 }
