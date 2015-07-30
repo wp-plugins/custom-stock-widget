@@ -126,6 +126,10 @@ find this plugin on wordpress.org and contact us through the support tab.
 
 == Changelog ==
 
+= 2.1.1.a =
+
+* Fixed a typo
+
 = 2.1.1 =
 
 * Added warning message and prevented activation of plugin for versions < php 5.3.0
