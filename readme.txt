@@ -4,7 +4,7 @@ Contributors: Relevad
 Tags: custom stock widget, stock table, stocks, quotes, stock market, stock price, share prices, market changes, trading, finance, financial, stock widget
 Requires at least: 3.8.0
 Tested up to: 4.1.1
-Stable tag: 2.1.1a
+Stable tag: 2.1.1b
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,7 +126,11 @@ find this plugin on wordpress.org and contact us through the support tab.
 
 == Changelog ==
 
-= 2.1.1.a =
+= 2.1.1b =
+
+* Fixed a typo with the activation hook
+
+= 2.1.1a =
 
 * Fixed a typo
 

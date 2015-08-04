@@ -101,9 +101,7 @@ function stock_widget_activate() {
         add_option('stock_widget_version_text', "Initial install v{$current_version}");
     }
 }
-register_activation_hook( __FILE__, NS.'stock_widget_activate' ); //does this happen imediately or not?
-
-//NOTE: just installing a plugin, does not make any of its code run, it needs to be activated first.
+register_activation_hook( $main_plugin_file, NS.'stock_widget_activate' ); //references  $main_plugin_file  which was defined in the bootstrap file
 
 
 
